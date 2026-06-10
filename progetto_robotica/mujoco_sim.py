@@ -15,6 +15,8 @@ from sensor_msgs.msg import Imu, JointState
 from std_msgs.msg import Bool, String
 from nav_msgs.msg import Odometry
 
+from progetto_robotica import sim_utils
+
 class MuJoCoSimNode(Node):
     def __init__(self):
         super().__init__('mujoco_sim_node')
@@ -136,16 +138,7 @@ class MuJoCoSimNode(Node):
                     self.csv_file.close()
                     self.csv_file = None
         
-    def get_gravity_orientation(self, quaternion):
-        qw, qx, qy, qz = quaternion[0], quaternion[1], quaternion[2], quaternion[3]
-        gravity_orientation = np.zeros(3)
-        gravity_orientation[0] = 2 * (-qz * qx + qw * qy)
-        gravity_orientation[1] = -2 * (qz * qy + qw * qx)
-        gravity_orientation[2] = 1 - 2 * (qw * qw + qz * qz)
-        return gravity_orientation
-        
-    def pd_control(self, target_q, q, kp, target_dq, dq, kd):
-        return (target_q - q) * kp + (target_dq - dq) * kd
+
         
     def run_sim_loop(self):
         # Simulation loop variables
@@ -162,7 +155,7 @@ class MuJoCoSimNode(Node):
                         step_start = time.time()
                         
                         # Apply PD control
-                        tau = self.pd_control(target_dof_pos, self.d.qpos[7:], self.kps, np.zeros_like(self.kds), self.d.qvel[6:], self.kds)
+                        tau = sim_utils.pd_control(target_dof_pos, self.d.qpos[7:], self.kps, np.zeros_like(self.kds), self.d.qvel[6:], self.kds)
                         self.d.ctrl[:] = tau
                         
                         # Step physics
@@ -191,7 +184,7 @@ class MuJoCoSimNode(Node):
                 step_start = time.time()
                 
                 # Apply PD control
-                tau = self.pd_control(target_dof_pos, self.d.qpos[7:], self.kps, np.zeros_like(self.kds), self.d.qvel[6:], self.kds)
+                tau = sim_utils.pd_control(target_dof_pos, self.d.qpos[7:], self.kps, np.zeros_like(self.kds), self.d.qvel[6:], self.kds)
                 self.d.ctrl[:] = tau
                 
                 # Step physics
@@ -217,7 +210,7 @@ class MuJoCoSimNode(Node):
 
         qj = (qj - self.default_angles) * self.dof_pos_scale
         dqj = dqj * self.dof_vel_scale
-        gravity_orientation = self.get_gravity_orientation(quat)
+        gravity_orientation = sim_utils.get_gravity_orientation(quat)
         omega = omega * self.ang_vel_scale
 
         period = 0.8
