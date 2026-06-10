@@ -4,7 +4,7 @@
   <name>progetto_robotica</name>
   <version>1.0.0</version>
   <description>ROS 2 Teleoperation and Web Dashboard for Unitree G1 in MuJoCo</description>
-  <maintainer email="ergys@todo.todo">ergys</maintainer>
+  <maintainer email="ergysperdeda97@gmail.com">ergys</maintainer>
   <license>Apache-2.0</license>
 
   <depend>rclpy</depend>
@@ -12,6 +12,9 @@
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>nav_msgs</depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>ros2bag</exec_depend>
+  <exec_depend>rosbag2_storage_mcap</exec_depend>
 
   <export>
     <build_type>ament_python</build_type>

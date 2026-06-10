@@ -3,6 +3,8 @@ import os
 import time
 import yaml
 import threading
+
+DEFAULT_RL_GYM = os.path.expanduser(os.environ.get('UNITREE_RL_GYM_PATH', '~/unitree_rl_gym'))
 import numpy as np
 import torch
 import mujoco
@@ -22,15 +24,17 @@ class MuJoCoSimNode(Node):
         super().__init__('mujoco_sim_node')
         
         # Declare parameters
-        self.declare_parameter('xml_path', '/home/ergys/unitree_rl_gym/resources/robots/g1_description/scene.xml')
-        self.declare_parameter('policy_path', '/home/ergys/unitree_rl_gym/deploy/pre_train/g1/motion.pt')
-        self.declare_parameter('config_path', '/home/ergys/unitree_rl_gym/deploy/deploy_mujoco/configs/g1.yaml')
+        self.declare_parameter('xml_path', os.path.join(DEFAULT_RL_GYM, 'resources/robots/g1_description/scene.xml'))
+        self.declare_parameter('policy_path', os.path.join(DEFAULT_RL_GYM, 'deploy/pre_train/g1/motion.pt'))
+        self.declare_parameter('config_path', os.path.join(DEFAULT_RL_GYM, 'deploy/deploy_mujoco/configs/g1.yaml'))
         self.declare_parameter('headless', False)
+        self.declare_parameter('bag_dir', os.path.expanduser('~/progetto_robotica_bags'))
         
         xml_path = self.get_parameter('xml_path').value
         policy_path = self.get_parameter('policy_path').value
         config_path = self.get_parameter('config_path').value
         self.headless = self.get_parameter('headless').value
+        self.bag_dir = os.path.expanduser(self.get_parameter('bag_dir').value)
         
         self.get_logger().info(f"Loading config from: {config_path}")
         self.get_logger().info(f"Loading XML from: {xml_path}")
@@ -118,7 +122,7 @@ class MuJoCoSimNode(Node):
         bag_name = msg.data
         with self.csv_lock:
             if bag_name:
-                bag_dir = "/mnt/c/Users/ergys/Desktop/Git_Repositories/progetto-robotica/bags"
+                bag_dir = self.bag_dir
                 os.makedirs(bag_dir, exist_ok=True)
                 csv_path = os.path.join(bag_dir, f"{bag_name}.csv")
                 self.get_logger().info(f"Opening CSV telemetry log: {csv_path}")

@@ -1,0 +1,8 @@
+mujoco>=3.0
+torch
+numpy
+pyyaml
+flask
+flask-socketio
+pygame
+pytest

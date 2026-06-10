@@ -16,10 +16,13 @@ from sensor_msgs.msg import Imu, JointState
 from std_msgs.msg import Bool, String
 from nav_msgs.msg import Odometry
 
+from ament_index_python.packages import get_package_share_directory
+
+_share = get_package_share_directory('progetto_robotica')
 app = Flask(
     __name__,
-    template_folder='/mnt/c/Users/ergys/Desktop/Git_Repositories/progetto-robotica/web/templates',
-    static_folder='/mnt/c/Users/ergys/Desktop/Git_Repositories/progetto-robotica/web/static'
+    template_folder=os.path.join(_share, 'web', 'templates'),
+    static_folder=os.path.join(_share, 'web', 'static'),
 )
 socketio = SocketIO(app, cors_allowed_origins="*")
 
@@ -54,6 +57,9 @@ state_lock = threading.Lock()
 class WebTeleopNode(Node):
     def __init__(self):
         super().__init__('web_teleop_node')
+        
+        self.declare_parameter('bag_dir', os.path.expanduser('~/progetto_robotica_bags'))
+        self.bag_dir = os.path.expanduser(self.get_parameter('bag_dir').value)
         
         # Publishers
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
@@ -201,7 +207,7 @@ class WebTeleopNode(Node):
         if self.is_recording:
             return False, "Already recording"
             
-        bag_dir = "/mnt/c/Users/ergys/Desktop/Git_Repositories/progetto-robotica/bags"
+        bag_dir = self.bag_dir
         os.makedirs(bag_dir, exist_ok=True)
         
         self.bag_name = f"bag_{time.strftime('%Y%m%d_%H%M%S')}"
