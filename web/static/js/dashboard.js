@@ -361,3 +361,8 @@ function checkRecordingStatus() {
 
 // Run initial status check
 checkRecordingStatus();
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+    fetch('/api/reset', { method: 'POST' });
+});
+

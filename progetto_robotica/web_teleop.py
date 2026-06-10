@@ -13,7 +13,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Imu, JointState
-from std_msgs.msg import Bool, String
+from std_msgs.msg import Bool, String, Empty
 from nav_msgs.msg import Odometry
 
 from ament_index_python.packages import get_package_share_directory
@@ -64,6 +64,7 @@ class WebTeleopNode(Node):
         # Publishers
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.rec_status_pub = self.create_publisher(String, '/recording_status', 10)
+        self.reset_pub = self.create_publisher(Empty, '/sim_reset', 10)
         
         # Subscribers for telemetry
         self.create_subscription(Imu, '/imu', self.imu_callback, 10)
@@ -288,6 +289,11 @@ def handle_start_record():
 def handle_stop_record():
     success, info = ros_node.stop_recording()
     return jsonify({'success': success, 'info': info})
+
+@app.route('/api/reset', methods=['POST'])
+def handle_reset():
+    ros_node.reset_pub.publish(Empty())
+    return jsonify({'success': True})
 
 @socketio.on('teleop_cmd')
 def handle_teleop_cmd(data):
