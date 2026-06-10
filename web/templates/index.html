@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unitree G1 Teleop & Telemetry Dashboard</title>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Fall Alarm Overlay -->
+    <div id="fall-alarm" class="alarm-overlay">
+        <div class="alarm-content">
+            <i class="fa-solid fa-triangle-exclamation alarm-icon animate-pulse"></i>
+            <h2>CRITICAL ALERT: ROBOT FALLEN</h2>
+            <p id="fall-details">Tilt angle exceeded safety threshold (35°)</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-robot brand-icon"></i>
+                <div class="brand-text">
+                    <h1>Unitree G1</h1>
+                    <span>MuJoCo Teleoperation</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+                <a href="#control-guide" class="nav-item"><i class="fa-solid fa-keyboard"></i> Controlli</a>
+            </nav>
+            
+            <div class="connection-status" id="conn-status">
+                <div class="status-indicator offline" id="status-dot"></div>
+                <span id="status-text">Disconnected</span>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-title">
+                    <h2>Live Telemetry Dashboard</h2>
+                    <p>Real-time telemetry streaming from MuJoCo VM</p>
+                </div>
+                <div class="header-actions">
+                    <div id="record-banner" class="record-banner hidden">
+                        <span class="record-dot animate-pulse-fast"></span>
+                        <span id="record-text">REC: bag_name</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Row 1: Robot Pose & Contacts -->
+                <div class="card glassmorphism col-span-2">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-compass"></i> Stato e Assetto Robot</h3>
+                        <span class="badge" id="telemetry-rate">0 Hz</span>
+                    </div>
+                    <div class="card-body pose-section">
+                        <!-- 3D/2D Tilt bubble indicator -->
+                        <div class="tilt-widget">
+                            <div class="bubble-container">
+                                <div class="bubble-grid"></div>
+                                <div class="bubble-dot" id="tilt-bubble"></div>
+                            </div>
+                            <span class="widget-label">Assetto (Roll/Pitch)</span>
+                        </div>
+                        
+                        <!-- Numerical states -->
+                        <div class="state-metrics">
+                            <div class="metric">
+                                <span class="metric-label">Roll</span>
+                                <span class="metric-value" id="val-roll">0.0°</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Pitch</span>
+                                <span class="metric-value" id="val-pitch">0.0°</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Yaw</span>
+                                <span class="metric-value" id="val-yaw">0.0°</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Posizione Z</span>
+                                <span class="metric-value" id="val-posz">0.00 m</span>
+                            </div>
+                        </div>
+
+                        <!-- Foot Contacts indicators -->
+                        <div class="contact-widget">
+                            <div class="foot-indicator" id="foot-l">
+                                <i class="fa-solid fa-shoe-prints foot-icon"></i>
+                                <span>Left Foot</span>
+                            </div>
+                            <div class="foot-indicator" id="foot-r">
+                                <i class="fa-solid fa-shoe-prints foot-icon"></i>
+                                <span>Right Foot</span>
+                            </div>
+                            <div class="flight-phase-badge hidden" id="flight-badge">
+                                FLIGHT PHASE
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 1: Manual Controls & Session Record -->
+                <div class="card glassmorphism">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-gamepad"></i> Teleoperazione</h3>
+                    </div>
+                    <div class="card-body teleop-section">
+                        <!-- Touch buttons for control fallback -->
+                        <div class="direction-pad">
+                            <button class="pad-btn" id="btn-turn-l" title="Turn Left (Q)"><i class="fa-solid fa-rotate-left"></i></button>
+                            <button class="pad-btn" id="btn-forward" title="Forward (W)"><i class="fa-solid fa-arrow-up"></i></button>
+                            <button class="pad-btn" id="btn-turn-r" title="Turn Right (E)"><i class="fa-solid fa-rotate-right"></i></button>
+                            <button class="pad-btn" id="btn-left" title="Left (A)"><i class="fa-solid fa-arrow-left"></i></button>
+                            <button class="pad-btn stop-btn" id="btn-stop" title="Stop (Space)"><i class="fa-solid fa-circle-stop"></i></button>
+                            <button class="pad-btn" id="btn-right" title="Right (D)"><i class="fa-solid fa-arrow-right"></i></button>
+                            <div class="spacer"></div>
+                            <button class="pad-btn" id="btn-backward" title="Backward (S)"><i class="fa-solid fa-arrow-down"></i></button>
+                            <div class="spacer"></div>
+                        </div>
+                        
+                        <div class="session-controls">
+                            <h4>Session Recorder</h4>
+                            <div class="btn-group">
+                                <button class="btn btn-record" id="btn-record-start">
+                                    <i class="fa-solid fa-circle"></i> Start Record
+                                </button>
+                                <button class="btn btn-stop-rec" id="btn-record-stop" disabled>
+                                    <i class="fa-solid fa-square"></i> Stop Record
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Live Plots -->
+                <div class="card glassmorphism col-span-2">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-chart-line"></i> Accelerazioni IMU (Pelvi)</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="plot-imu" class="chart-container"></div>
+                    </div>
+                </div>
+
+                <div class="card glassmorphism">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-circle-nodes"></i> Stato Giunti Leg (Posizioni)</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="plot-joints" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <!-- Custom JS -->
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
