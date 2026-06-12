@@ -1,0 +1,75 @@
+Proposta di Progetto: Teleoperazione e Web 
+Dashboard per Unitree G1 (Traccia 10) 
+ 
+1. Obiettivo del Progetto 
+ 
+Sviluppare un'architettura software integrata per la teleoperazione del robot umanoide Unitree 
+G1 in ambiente simulato MuJoCo.  
+ 
+Il sistema permetterà il controllo via gamepad/tastiera e fornirà una dashboard web in tempo 
+reale per il monitoraggio avanzato della telemetria, il rilevamento di stati critici (come cadute, 
+perdita di contatto) e la gestione di sessioni di record/replay. 
+ 
+2. Componenti Software e Strumenti 
+Layer 
+Tecnologie 
+Ruolo 
+Simulazione & 
+Core 
+MuJoCo, mujoco_menagerie 
+Simulazione fisica del modello G1. 
+Middleware & Log 
+ROS 2 (Jazzy), rosbag2 
+Gestione topic (IMU, Joint States, 
+Contacts), logging e replay. 
+Backend & 
+Controllo 
+Python (rclpy), pygame, 
+Flask, Flask-SocketIO 
+Nodo ROS 2 unificato per lettura 
+input, pubblicazione su /cmd_vel e 
+server web per lo streaming real-time 
+dei dati. 
+Web Dashboard 
+HTML/JS, Plotly.js / Chart.js 
+Frontend SPA minimale per 
+visualizzazione live dei grafici e alert 
+visivi via WebSocket. 
+ 
+ 
+3. Scenario e Dominio di Valutazione 
+Il robot Unitree G1 verrà istanziato all'interno di un ambiente di test simulato in MuJoCo 
+caratterizzato da due scenari principali: 
+●​ Corridoio lineare con piano regolare: Per la calibrazione fine dei comandi di velocità e 
+la validazione dei grafici di odometria e stato dei giunti. 
+●​ Percorso a ostacoli elementari (rampe o piccoli dislivelli): Per testare la reattività 
+della dashboard nella notazione dei contatti ai piedi e per la validazione del sistema di 
+alert in caso di perdita di equilibrio o caduta del robot. 
+​
+4. Risultati Attesi e Metriche di Valutazione 
+Ci si attende il rilascio di un prototipo funzionante, riproducibile ed eseguibile in ambiente locale. 
+I risultati verranno quantificati attraverso le seguenti metriche di performance e usabilità: 
+●​ Frequenza di Aggiornamento (Telemetria): Capacità del backend di campionare e 
+inviare i dati dei sensori (IMU, joint states) a una frequenza target ≥ 30 Hz senza drop di 
+pacchetti. 
+●​ Latenza di Controllo: Tempo intercorso tra la pressione del comando 
+(tastiera/gamepad) e la ricezione del comando di velocità da parte del simulatore (target 
+< 50 ms). 
+●​ Accuratezza del Sistema di Alert: Valutazione della precisione del trigger visivo di 
+caduta (basato sull'angolo di roll/pitch dell'IMU oltre una determinata soglia) ed efficacia 
+nel rilevamento del flight phase (perdita simultanea di contatto su entrambi i piedi). 
+●​ Fedeltà di Replay: Verifica che la sessione registrata e riprodotta generi una traiettoria 
+nel simulatore con un errore quadratico medio (MSE) trascurabile rispetto alla 
+teleoperazione live. 
+​
+5. Suddivisione Indicativa del Lavoro 
+Essendo la proposta sviluppata singolarmente, il carico lavorativo si concentrerà sullo sviluppo 
+di un prototipo essenziale ma robusto, focalizzato su un singolo dominio simulato.  
+I deliverable finali includeranno: 
+1.​ Relazione Descrittiva (Max 5 pagine): Conforme alle specifiche formali richieste 
+contenente le scelte progettuali, i diagrammi di flusso dei nodi ROS 2 e l'analisi critica 
+dei dati raccolti. 
+2.​ Repository Git: Codice sorgente documentato, file di configurazione (launch files ROS 
+2) e un file README.md dettagliato con le istruzioni per il deployment deterministico in 
+Docker o ambiente locale. 
+3.​ Demo Simulazione: Scenario MuJoCo riproducibile per la discussione in sede d'esame. 

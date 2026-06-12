@@ -1,6 +1,11 @@
 // WebSocket connection
 const socket = io();
 
+// Latency probe: WS round-trip / 2 + latenza ROS (web node -> simulatore)
+let wsLatencyMs = 0;
+setInterval(() => socket.emit('latency_ping', { t: performance.now() }), 1000);
+socket.on('latency_pong', (data) => { wsLatencyMs = (performance.now() - data.t) / 2; });
+
 // UI Elements
 const statusDot = document.getElementById('status-dot');
 const statusText = document.getElementById('status-text');
@@ -102,9 +107,11 @@ socket.on('telemetry', (state) => {
     valYaw.innerText = `${euler.yaw.toFixed(1)}°`;
     valPosz.innerText = `${state.odom.position.z.toFixed(2)} m`;
 
-    // Update safety fall alarm overlay
-    // Threshold is 35 degrees
-    if (Math.abs(euler.roll) > 35 || Math.abs(euler.pitch) > 35) {
+    const totalLatency = wsLatencyMs + (state.latency_ms || 0);
+    document.getElementById('val-latency').innerText = `${totalLatency.toFixed(1)} ms`;
+
+    // Update safety fall alarm overlay - driven by backend
+    if (state.fall_detected) {
         fallAlarm.classList.add('triggered');
     } else {
         fallAlarm.classList.remove('triggered');

@@ -10,10 +10,11 @@ import mujoco
 import mujoco.viewer
 
 import rclpy
+import rclpy.time
 from rclpy.node import Node
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import Imu, JointState
-from std_msgs.msg import Bool, Empty, String
+from std_msgs.msg import Bool, Empty, String, Float64
 from nav_msgs.msg import Odometry
 
 from progetto_robotica import sim_utils
@@ -30,12 +31,16 @@ class MuJoCoSimNode(Node):
         self.declare_parameter('config_path', os.path.join(DEFAULT_RL_GYM, 'deploy/deploy_mujoco/configs/g1.yaml'))
         self.declare_parameter('headless', False)
         self.declare_parameter('bag_dir', os.path.expanduser('~/progetto_robotica_bags'))
+        self.declare_parameter('cmd_timeout', 0.5)
+        self.declare_parameter('fall_threshold_deg', 35.0)
 
         xml_path = self.get_parameter('xml_path').value
         policy_path = self.get_parameter('policy_path').value
         config_path = self.get_parameter('config_path').value
         self.headless = self.get_parameter('headless').value
         self.bag_dir = os.path.expanduser(self.get_parameter('bag_dir').value)
+        self.cmd_timeout = self.get_parameter('cmd_timeout').value
+        self.fall_threshold_deg = self.get_parameter('fall_threshold_deg').value
 
         with open(config_path, 'r') as f:
             self.config = yaml.load(f, Loader=yaml.FullLoader)
@@ -66,9 +71,11 @@ class MuJoCoSimNode(Node):
         self.csv_file = None
         self.csv_lock = threading.Lock()
         self.is_logging_csv = False
+        self.last_cmd_rx = time.monotonic()
 
         # ROS I/O
-        self.cmd_vel_sub = self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
+        self.cmd_vel_sub = self.create_subscription(TwistStamped, '/cmd_vel', self.cmd_vel_callback, 10)
+        self.latency_pub = self.create_publisher(Float64, '/metrics/cmd_latency_ms', 10)
         self.rec_status_sub = self.create_subscription(String, '/recording_status', self.rec_status_callback, 10)
         self.reset_sub = self.create_subscription(Empty, '/sim_reset', self.reset_callback, 10)
         self.imu_pub = self.create_publisher(Imu, '/imu', 10)
@@ -76,6 +83,7 @@ class MuJoCoSimNode(Node):
         self.left_contact_pub = self.create_publisher(Bool, '/contacts/left', 10)
         self.right_contact_pub = self.create_publisher(Bool, '/contacts/right', 10)
         self.odom_pub = self.create_publisher(Odometry, '/odom', 10)
+        self.fall_pub = self.create_publisher(Bool, '/fall_detected', 10)
 
         # MuJoCo
         self.m = mujoco.MjModel.from_xml_path(xml_path)
@@ -106,10 +114,13 @@ class MuJoCoSimNode(Node):
 
     # ---------- callback ROS (thread di spin) ----------
 
-    def cmd_vel_callback(self, msg: Twist):
-        self.cmd[0] = msg.linear.x
-        self.cmd[1] = msg.linear.y
-        self.cmd[2] = msg.angular.z
+    def cmd_vel_callback(self, msg: TwistStamped):
+        self.cmd[0] = msg.twist.linear.x
+        self.cmd[1] = msg.twist.linear.y
+        self.cmd[2] = msg.twist.angular.z
+        self.last_cmd_rx = time.monotonic()
+        latency_ns = (self.get_clock().now() - rclpy.time.Time.from_msg(msg.header.stamp)).nanoseconds
+        self.latency_pub.publish(Float64(data=latency_ns / 1e6))
 
     def rec_status_callback(self, msg: String):
         self.pending_rec = msg.data  # gestito dal sim thread
@@ -150,7 +161,8 @@ class MuJoCoSimNode(Node):
                 self.csv_file = open(csv_path, 'w')
                 qpos_cols = ",".join(f"qpos_{i}" for i in range(self.m.nq))
                 qvel_cols = ",".join(f"qvel_{i}" for i in range(self.m.nv))
-                self.csv_file.write(f"sim_time,pos_x,pos_y,pos_z,cmd_vx,cmd_vy,cmd_wz,{qpos_cols},{qvel_cols}\n")
+                target_cols = ",".join(f"target_{i}" for i in range(self.num_actions))
+                self.csv_file.write(f"sim_time,pos_x,pos_y,pos_z,cmd_vx,cmd_vy,cmd_wz,{qpos_cols},{qvel_cols},{target_cols}\n")
                 self.is_logging_csv = True
             self._write_csv_row()  # riga 0: stato iniziale post-reset (sim_time = 0)
             self.get_logger().info(f"Opened CSV telemetry log: {csv_path}")
@@ -164,9 +176,10 @@ class MuJoCoSimNode(Node):
             sim_time = self.counter * self.simulation_dt
             qpos_str = ",".join(str(x) for x in self.d.qpos)
             qvel_str = ",".join(str(x) for x in self.d.qvel)
+            target_str = ",".join(str(x) for x in self.target_dof_pos)
             self.csv_file.write(
                 f"{sim_time},{self.d.qpos[0]},{self.d.qpos[1]},{self.d.qpos[2]},"
-                f"{self.cmd[0]},{self.cmd[1]},{self.cmd[2]},{qpos_str},{qvel_str}\n")
+                f"{self.cmd[0]},{self.cmd[1]},{self.cmd[2]},{qpos_str},{qvel_str},{target_str}\n")
 
     # ---------- loop di simulazione ----------
 
@@ -188,6 +201,11 @@ class MuJoCoSimNode(Node):
                 if self.reset_requested:
                     self._do_reset()
 
+                if self.cmd.any() and (time.monotonic() - self.last_cmd_rx) > self.cmd_timeout:
+                    self.cmd[:] = 0.0
+                    self.get_logger().warn("cmd_vel timeout: command zeroed for safety",
+                                           throttle_duration_sec=5.0)
+
                 tau = sim_utils.pd_control(
                     self.target_dof_pos, self.d.qpos[7:], self.kps,
                     np.zeros_like(self.kds), self.d.qvel[6:], self.kds)
@@ -197,9 +215,9 @@ class MuJoCoSimNode(Node):
                 self.counter += 1
                 if self.counter % self.control_decimation == 0:
                     self.evaluate_policy()
-                    self.publish_telemetries()
+                self.publish_telemetries()
 
-                if viewer is not None:
+                if viewer is not None and self.counter % self.control_decimation == 0:
                     viewer.sync()
 
                 time_until_next_step = self.simulation_dt - (time.time() - step_start)
@@ -233,6 +251,10 @@ class MuJoCoSimNode(Node):
         with torch.no_grad():
             self.action[:] = self.policy(obs_tensor).numpy().squeeze()
         self.target_dof_pos[:] = self.action * self.action_scale + self.default_angles
+        if self.counter == 10:
+            print("LIVE SIM OBS AT 10:", self.obs.tolist())
+            print("LIVE SIM ACTION AT 10:", self.action.tolist())
+            print("LIVE SIM TARGET AT 10:", self.target_dof_pos.tolist())
 
     def publish_telemetries(self):
         if self.is_logging_csv:
@@ -253,6 +275,11 @@ class MuJoCoSimNode(Node):
                     right_contact = True
         self.left_contact_pub.publish(Bool(data=left_contact))
         self.right_contact_pub.publish(Bool(data=right_contact))
+
+        fallen = sim_utils.is_fallen(self.d.qpos[3], self.d.qpos[4],
+                                     self.d.qpos[5], self.d.qpos[6],
+                                     self.fall_threshold_deg)
+        self.fall_pub.publish(Bool(data=fallen))
 
         now = self.get_clock().now().to_msg()
 

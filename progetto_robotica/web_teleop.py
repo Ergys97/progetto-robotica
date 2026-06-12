@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
+import copy
 import time
 import subprocess
 import threading
@@ -11,9 +12,9 @@ import pygame
 
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import Imu, JointState
-from std_msgs.msg import Bool, String, Empty
+from std_msgs.msg import Bool, String, Empty, Float64
 from nav_msgs.msg import Odometry
 
 from ament_index_python.packages import get_package_share_directory
@@ -49,6 +50,8 @@ telemetry_state = {
         'linear_velocity': {'x': 0.0, 'y': 0.0, 'z': 0.0},
         'angular_velocity': {'x': 0.0, 'y': 0.0, 'z': 0.0}
     },
+    'latency_ms': 0.0,
+    'fall_detected': False,
     'last_update': 0.0
 }
 
@@ -62,7 +65,7 @@ class WebTeleopNode(Node):
         self.bag_dir = os.path.expanduser(self.get_parameter('bag_dir').value)
         
         # Publishers
-        self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.cmd_vel_pub = self.create_publisher(TwistStamped, '/cmd_vel', 10)
         self.rec_status_pub = self.create_publisher(String, '/recording_status', 10)
         self.reset_pub = self.create_publisher(Empty, '/sim_reset', 10)
         
@@ -72,6 +75,8 @@ class WebTeleopNode(Node):
         self.create_subscription(Bool, '/contacts/left', self.left_contact_callback, 10)
         self.create_subscription(Bool, '/contacts/right', self.right_contact_callback, 10)
         self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
+        self.create_subscription(Float64, '/metrics/cmd_latency_ms', self.latency_callback, 10)
+        self.create_subscription(Bool, '/fall_detected', self.fall_callback, 10)
         
         self.record_process = None
         self.bag_name = ""
@@ -150,19 +155,36 @@ class WebTeleopNode(Node):
             }
             telemetry_state['last_update'] = time.time()
 
+    def latency_callback(self, msg: Float64):
+        with state_lock:
+            telemetry_state['latency_ms'] = round(msg.data, 1)
+
+    def fall_callback(self, msg: Bool):
+        with state_lock:
+            telemetry_state['fall_detected'] = msg.data
+
     def publish_cmd_vel(self, vx: float, vy: float, wz: float):
-        msg = Twist()
-        msg.linear.x = float(vx)
-        msg.linear.y = float(vy)
-        msg.angular.z = float(wz)
+        msg = TwistStamped()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.twist.linear.x = float(vx)
+        msg.twist.linear.y = float(vy)
+        msg.twist.angular.z = float(wz)
         self.cmd_vel_pub.publish(msg)
 
     def stream_telemetry_loop(self):
+        # Scheduling compensato: il periodo non accumula il tempo di emit/serializzazione
+        period = 1.0 / 33.0  # target 33 Hz per garantire >= 30 Hz effettivi
+        next_t = time.monotonic()
         while rclpy.ok():
             with state_lock:
-                # Emit the telemetry state over WebSocket to all clients
-                socketio.emit('telemetry', telemetry_state)
-            time.sleep(0.033) # ~30 Hz stream frequency
+                snapshot = copy.deepcopy(telemetry_state)
+            socketio.emit('telemetry', snapshot)
+            next_t += period
+            sleep_t = next_t - time.monotonic()
+            if sleep_t > 0:
+                time.sleep(sleep_t)
+            else:
+                next_t = time.monotonic()  # in ritardo: riallinea senza burst
 
     def gamepad_loop(self):
         # Configure headless env for pygame if window is not needed
@@ -224,7 +246,9 @@ class WebTeleopNode(Node):
             "/joint_states",
             "/contacts/left",
             "/contacts/right",
-            "/odom"
+            "/odom",
+            "/fall_detected",
+            "/metrics/cmd_latency_ms"
         ]
         
         self.record_process = subprocess.Popen(
@@ -302,6 +326,10 @@ def handle_teleop_cmd(data):
     vy = data.get('vy', 0.0)
     wz = data.get('wz', 0.0)
     ros_node.publish_cmd_vel(vx, vy, wz)
+
+@socketio.on('latency_ping')
+def handle_latency_ping(data):
+    emit('latency_pong', data)
 
 def main(args=None):
     global ros_node
