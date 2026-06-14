@@ -100,7 +100,11 @@ class MuJoCoSimNode(Node):
 
         self.left_foot_geom_ids = []
         self.right_foot_geom_ids = []
+        self.support_geom_ids = []
         for i in range(self.m.ngeom):
+            geom_name = self.m.geom(i).name or ""
+            if i == 0 or geom_name == 'floor' or geom_name.startswith('obstacle_'):
+                self.support_geom_ids.append(i)
             body_name = self.m.body(self.m.geom_bodyid[i]).name
             if body_name == 'left_ankle_roll_link':
                 self.left_foot_geom_ids.append(i)
@@ -263,18 +267,13 @@ class MuJoCoSimNode(Node):
             self._write_csv_row()
 
         # 1. Contatti piedi
-        left_contact = False
-        right_contact = False
-        for i in range(self.d.ncon):
-            c = self.d.contact[i]
-            is_floor1 = (c.geom1 == 0 or self.m.geom(c.geom1).name == 'floor')
-            is_floor2 = (c.geom2 == 0 or self.m.geom(c.geom2).name == 'floor')
-            if is_floor1 or is_floor2:
-                other_geom = c.geom2 if is_floor1 else c.geom1
-                if other_geom in self.left_foot_geom_ids:
-                    left_contact = True
-                elif other_geom in self.right_foot_geom_ids:
-                    right_contact = True
+        contact_pairs = [(self.d.contact[i].geom1, self.d.contact[i].geom2) for i in range(self.d.ncon)]
+        left_contact, right_contact = sim_utils.detect_foot_contacts(
+            contact_pairs,
+            self.support_geom_ids,
+            self.left_foot_geom_ids,
+            self.right_foot_geom_ids,
+        )
         self.left_contact_pub.publish(Bool(data=left_contact))
         self.right_contact_pub.publish(Bool(data=right_contact))
 

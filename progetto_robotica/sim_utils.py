@@ -35,3 +35,27 @@ def find_log_index(sim_times, t):
     """Index of the last logged row with sim_time <= t (clamped to valid range)."""
     i = int(np.searchsorted(sim_times, t, side='right')) - 1
     return max(0, min(i, len(sim_times) - 1))
+
+
+def detect_foot_contacts(contacts, support_geom_ids, left_foot_geom_ids, right_foot_geom_ids):
+    """Detect foot contacts against floor-like support geoms."""
+    support_geom_ids = set(support_geom_ids)
+    left_foot_geom_ids = set(left_foot_geom_ids)
+    right_foot_geom_ids = set(right_foot_geom_ids)
+    left_contact = False
+    right_contact = False
+
+    for geom1, geom2 in contacts:
+        if geom1 in support_geom_ids:
+            foot_geom = geom2
+        elif geom2 in support_geom_ids:
+            foot_geom = geom1
+        else:
+            continue
+
+        if foot_geom in left_foot_geom_ids:
+            left_contact = True
+        elif foot_geom in right_foot_geom_ids:
+            right_contact = True
+
+    return left_contact, right_contact
