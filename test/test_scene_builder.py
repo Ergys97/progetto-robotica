@@ -41,11 +41,37 @@ class SceneBuilderTest(unittest.TestCase):
             text = generated.read_text(encoding="utf-8")
 
             self.assertEqual(generated.name, "obstacle_course_scene.xml")
-            self.assertIn(f'file="{model.resolve().as_posix()}"', text)
+            self.assertNotIn("<include", text)
             self.assertIn('name="obstacle_ramp"', text)
             self.assertIn('name="obstacle_step_1"', text)
             self.assertIn('name="obstacle_step_2"', text)
             self.assertIn('name="obstacle_step_3"', text)
+
+    def test_obstacle_scene_preserves_included_mesh_paths_after_relocation(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            model_dir = tmp_path / "resources" / "robots" / "g1_description"
+            model_dir.mkdir(parents=True)
+            model = tmp_path / "g1.xml"
+            model.write_text(
+                "<mujoco model='g1'>"
+                "<compiler meshdir='resources/robots/g1_description' />"
+                "<asset><mesh name='left_hip_pitch' file='left_hip_pitch_link.STL' /></asset>"
+                "</mujoco>",
+                encoding="utf-8",
+            )
+            source = tmp_path / "scene.xml"
+            source.write_text(
+                "<mujoco><include file='g1.xml' /><worldbody><geom name='floor' type='plane' /></worldbody></mujoco>",
+                encoding="utf-8",
+            )
+
+            generated = Path(build_obstacle_scene(str(source), str(tmp_path / "bags" / "_generated_scenes")))
+            text = generated.read_text(encoding="utf-8")
+
+            self.assertNotIn("<include", text)
+            self.assertIn(f'meshdir="{model_dir.resolve().as_posix()}"', text)
+            self.assertIn('file="left_hip_pitch_link.STL"', text)
 
 
 if __name__ == "__main__":

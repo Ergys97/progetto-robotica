@@ -26,7 +26,7 @@ def build_obstacle_scene(base_xml_path: str, output_dir: str) -> str:
     tree = ET.parse(base_path)
     root = tree.getroot()
 
-    _rewrite_includes_to_absolute_paths(root, base_path.parent)
+    _prepare_xml_for_relocation(root, base_path.parent)
     worldbody = root.find("worldbody")
     if worldbody is None:
         worldbody = ET.SubElement(root, "worldbody")
@@ -41,15 +41,48 @@ def build_obstacle_scene(base_xml_path: str, output_dir: str) -> str:
     return str(generated_path)
 
 
-def _rewrite_includes_to_absolute_paths(root: ET.Element, base_dir: Path) -> None:
-    for include in root.findall(".//include"):
-        include_file = include.get("file")
-        if not include_file:
+def _prepare_xml_for_relocation(root: ET.Element, base_dir: Path) -> None:
+    _make_compiler_asset_dirs_absolute(root, base_dir)
+    _expand_includes(root, base_dir)
+
+
+def _make_compiler_asset_dirs_absolute(root: ET.Element, base_dir: Path) -> None:
+    for compiler in root.findall(".//compiler"):
+        for attr in ("meshdir", "texturedir"):
+            value = compiler.get(attr)
+            if not value:
+                continue
+            path = Path(os.path.expanduser(value))
+            if not path.is_absolute():
+                compiler.set(attr, (base_dir / path).resolve().as_posix())
+
+
+def _expand_includes(parent: ET.Element, base_dir: Path) -> None:
+    index = 0
+    while index < len(parent):
+        child = parent[index]
+        if child.tag != "include":
+            _expand_includes(child, base_dir)
+            index += 1
             continue
+
+        include_file = child.get("file")
+        if not include_file:
+            parent.remove(child)
+            continue
+
         include_path = Path(os.path.expanduser(include_file))
         if not include_path.is_absolute():
             include_path = (base_dir / include_path).resolve()
-        include.set("file", include_path.as_posix())
+
+        included_tree = ET.parse(include_path)
+        included_root = included_tree.getroot()
+        _prepare_xml_for_relocation(included_root, include_path.parent)
+
+        parent.remove(child)
+        for included_child in list(included_root):
+            parent.insert(index, included_child)
+            index += 1
 
 
 def _remove_existing_generated_obstacles(worldbody: ET.Element) -> None:
