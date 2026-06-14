@@ -36,6 +36,13 @@ let jointData = {
     right_ankle: []
 };
 
+const chartColors = {
+    paper: '#ffffff',
+    plot: '#ffffff',
+    grid: '#e4e7ec',
+    axis: '#667085',
+};
+
 // IMU Plot
 const imuPlotDiv = document.getElementById('plot-imu');
 const imuTraces = [
@@ -44,12 +51,12 @@ const imuTraces = [
     { x: timeData, y: imuData.z, name: 'Acc Z', mode: 'lines', line: { color: '#8b5cf6', width: 2 } }
 ];
 const imuLayout = {
-    paper_bgcolor: 'rgba(0,0,0,0)',
-    plot_bgcolor: 'rgba(0,0,0,0)',
+    paper_bgcolor: chartColors.paper,
+    plot_bgcolor: chartColors.plot,
     margin: { t: 20, b: 30, l: 40, r: 10 },
-    xaxis: { color: '#9ca3af', showgrid: false, zeroline: false },
-    yaxis: { color: '#9ca3af', gridcolor: 'rgba(255,255,255,0.05)', zeroline: false },
-    legend: { font: { color: '#9ca3af' }, orientation: 'h', y: -0.2 }
+    xaxis: { color: chartColors.axis, showgrid: false, zeroline: false },
+    yaxis: { color: chartColors.axis, gridcolor: chartColors.grid, zeroline: false },
+    legend: { font: { color: chartColors.axis }, orientation: 'h', y: -0.2 }
 };
 Plotly.newPlot(imuPlotDiv, imuTraces, imuLayout, { displayModeBar: false });
 
@@ -62,12 +69,12 @@ const jointTraces = [
     { x: timeData, y: jointData.right_ankle, name: 'R Ankle', mode: 'lines', line: { color: '#10b981', width: 1.5 } }
 ];
 const jointsLayout = {
-    paper_bgcolor: 'rgba(0,0,0,0)',
-    plot_bgcolor: 'rgba(0,0,0,0)',
+    paper_bgcolor: chartColors.paper,
+    plot_bgcolor: chartColors.plot,
     margin: { t: 20, b: 30, l: 40, r: 10 },
-    xaxis: { color: '#9ca3af', showgrid: false, zeroline: false },
-    yaxis: { color: '#9ca3af', gridcolor: 'rgba(255,255,255,0.05)', zeroline: false },
-    legend: { font: { color: '#9ca3af' }, orientation: 'h', y: -0.2 }
+    xaxis: { color: chartColors.axis, showgrid: false, zeroline: false },
+    yaxis: { color: chartColors.axis, gridcolor: chartColors.grid, zeroline: false },
+    legend: { font: { color: chartColors.axis }, orientation: 'h', y: -0.2 }
 };
 Plotly.newPlot(jointsPlotDiv, jointTraces, jointsLayout, { displayModeBar: false });
 
