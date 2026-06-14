@@ -17,7 +17,7 @@ from sensor_msgs.msg import Imu, JointState
 from std_msgs.msg import Bool, Empty, String, Float64
 from nav_msgs.msg import Odometry
 
-from progetto_robotica import sim_utils
+from progetto_robotica import scene_builder, sim_utils
 
 DEFAULT_RL_GYM = os.path.expanduser(os.environ.get('UNITREE_RL_GYM_PATH', '~/unitree_rl_gym'))
 
@@ -33,6 +33,7 @@ class MuJoCoSimNode(Node):
         self.declare_parameter('bag_dir', os.path.expanduser('~/progetto_robotica_bags'))
         self.declare_parameter('cmd_timeout', 0.5)
         self.declare_parameter('fall_threshold_deg', 35.0)
+        self.declare_parameter('scenario', 'flat')
 
         xml_path = self.get_parameter('xml_path').value
         policy_path = self.get_parameter('policy_path').value
@@ -41,6 +42,7 @@ class MuJoCoSimNode(Node):
         self.bag_dir = os.path.expanduser(self.get_parameter('bag_dir').value)
         self.cmd_timeout = self.get_parameter('cmd_timeout').value
         self.fall_threshold_deg = self.get_parameter('fall_threshold_deg').value
+        scenario = self.get_parameter('scenario').value
 
         with open(config_path, 'r') as f:
             self.config = yaml.load(f, Loader=yaml.FullLoader)
@@ -86,6 +88,9 @@ class MuJoCoSimNode(Node):
         self.fall_pub = self.create_publisher(Bool, '/fall_detected', 10)
 
         # MuJoCo
+        generated_scene_dir = os.path.join(self.bag_dir, "_generated_scenes")
+        xml_path = scene_builder.resolve_scene_xml(xml_path, scenario, generated_scene_dir)
+        self.get_logger().info(f"Loading MuJoCo scenario '{scenario}' from: {xml_path}")
         self.m = mujoco.MjModel.from_xml_path(xml_path)
         self.d = mujoco.MjData(self.m)
         self.m.opt.timestep = self.simulation_dt
@@ -251,10 +256,7 @@ class MuJoCoSimNode(Node):
         with torch.no_grad():
             self.action[:] = self.policy(obs_tensor).numpy().squeeze()
         self.target_dof_pos[:] = self.action * self.action_scale + self.default_angles
-        if self.counter == 10:
-            print("LIVE SIM OBS AT 10:", self.obs.tolist())
-            print("LIVE SIM ACTION AT 10:", self.action.tolist())
-            print("LIVE SIM TARGET AT 10:", self.target_dof_pos.tolist())
+
 
     def publish_telemetries(self):
         if self.is_logging_csv:

@@ -18,6 +18,8 @@ def generate_launch_description():
             default_value=os.path.join(RL_GYM, 'deploy/deploy_mujoco/configs/g1.yaml')),
         DeclareLaunchArgument('bag_dir',
             default_value=os.path.expanduser('~/progetto_robotica_bags')),
+        DeclareLaunchArgument('scenario', default_value='flat',
+                              description='Scenario MuJoCo: flat oppure obstacle_course'),
     ]
 
     sim_node = Node(
@@ -29,6 +31,7 @@ def generate_launch_description():
             'policy_path': LaunchConfiguration('policy_path'),
             'config_path': LaunchConfiguration('config_path'),
             'bag_dir': LaunchConfiguration('bag_dir'),
+            'scenario': LaunchConfiguration('scenario'),
         }],
     )
 
