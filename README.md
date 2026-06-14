@@ -35,14 +35,24 @@ python3 -m colcon build
 ## Esecuzione
 ```bash
 source ~/ros2_ws/install/setup.bash
-ros2 launch progetto_robotica teleop_sim_launch.py            # con viewer MuJoCo
-# Oppure in modalità headless:
-ros2 launch progetto_robotica teleop_sim_launch.py headless:=True
+
+# Scenario piano
+ros2 launch progetto_robotica teleop_sim_launch.py scenario:=flat
+
+# Scenario a ostacoli elementari
+ros2 launch progetto_robotica teleop_sim_launch.py scenario:=obstacle_course
+
+# Modalita headless
+ros2 launch progetto_robotica teleop_sim_launch.py headless:=True scenario:=obstacle_course
 ```
 
 Dashboard accessibile all'indirizzo: http://localhost:5000
 - Comandi di movimento: tasti WASD/QE (o gamepad USB), pulsante Stop (Spazio)
 - Gestione sessione: Start/Stop Record, Reset Sim.
+
+## Scenari di prova
+- `flat`: piano regolare, usato per calibrazione comandi, telemetria e replay MSE.
+- `obstacle_course`: rampa bassa e piccoli step progressivi, usati per validare contatti piedi, flight phase e fall detection.
 
 ## Replay e metriche
 Per eseguire il replay deterministico e calcolare le metriche (MSE traiettoria):
