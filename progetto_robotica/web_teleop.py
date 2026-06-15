@@ -2,10 +2,13 @@
 import os
 import sys
 import copy
+import csv
+import json
 import time
 import subprocess
 import threading
 import signal
+import re
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO, emit
 import pygame
@@ -57,6 +60,28 @@ telemetry_state = {
 }
 
 state_lock = threading.Lock()
+
+METRIC_FIELDS = [
+    'scenario',
+    'bag_name',
+    'started_at',
+    'ended_at',
+    'duration_s',
+    'sample_count',
+    'telemetry_hz_avg',
+    'telemetry_hz_min',
+    'latency_ms_avg',
+    'latency_ms_p95',
+    'latency_ms_max',
+    'max_abs_roll_deg',
+    'max_abs_pitch_deg',
+    'min_z',
+    'max_z',
+    'fall_detected_count',
+    'flight_phase_count',
+    'left_contact_loss_count',
+    'right_contact_loss_count',
+]
 
 class WebTeleopNode(Node):
     def __init__(self):
@@ -293,6 +318,31 @@ class WebTeleopNode(Node):
         
         return True, self.bag_name
 
+    def save_metrics(self, summary):
+        bag_name = str(summary.get('bag_name') or self.bag_name or 'dashboard_session')
+        if not re.fullmatch(r'[A-Za-z0-9_.-]+', bag_name):
+            return False, "Invalid bag_name"
+
+        summary = {field: summary.get(field) for field in METRIC_FIELDS}
+        summary['bag_name'] = bag_name
+        summary['scenario'] = summary.get('scenario') or self.scenario
+
+        metrics_dir = os.path.join(self.bag_dir, 'metrics')
+        os.makedirs(metrics_dir, exist_ok=True)
+        json_path = os.path.join(metrics_dir, f"{bag_name}_metrics.json")
+        csv_path = os.path.join(metrics_dir, f"{bag_name}_metrics.csv")
+
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(summary, f, indent=2)
+            f.write('\n')
+
+        with open(csv_path, 'w', encoding='utf-8', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=METRIC_FIELDS)
+            writer.writeheader()
+            writer.writerow(summary)
+
+        return True, {'json_path': json_path, 'csv_path': csv_path}
+
 # Global node reference
 ros_node = None
 
@@ -318,6 +368,12 @@ def handle_start_record():
 @app.route('/api/record/stop', methods=['POST'])
 def handle_stop_record():
     success, info = ros_node.stop_recording()
+    return jsonify({'success': success, 'info': info})
+
+@app.route('/api/metrics/save', methods=['POST'])
+def handle_save_metrics():
+    summary = request.get_json(silent=True) or {}
+    success, info = ros_node.save_metrics(summary)
     return jsonify({'success': success, 'info': info})
 
 @app.route('/api/reset', methods=['POST'])

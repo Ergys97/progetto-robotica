@@ -1,0 +1,21 @@
+{
+  "scenario": "obstacle_course",
+  "bag_name": "bag_20260615_164534",
+  "started_at": "2026-06-15T14:45:34.293Z",
+  "ended_at": "2026-06-15T14:47:59.863Z",
+  "duration_s": 145.57,
+  "sample_count": 4612,
+  "telemetry_hz_avg": 32.93,
+  "telemetry_hz_min": 3,
+  "latency_ms_avg": 9.57,
+  "latency_ms_p95": 26.35,
+  "latency_ms_max": 466.55,
+  "max_abs_roll_deg": 126.63,
+  "max_abs_pitch_deg": 89.28,
+  "min_z": 0.0581,
+  "max_z": 0.9168,
+  "fall_detected_count": 4,
+  "flight_phase_count": 79,
+  "left_contact_loss_count": 114,
+  "right_contact_loss_count": 139
+}

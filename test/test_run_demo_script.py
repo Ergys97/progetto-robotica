@@ -22,7 +22,7 @@ class RunDemoScriptTest(unittest.TestCase):
         self.assertIn('scenario:="${scenario}"', script)
         self.assertIn('headless="True"', script)
         self.assertIn('headless:="${headless}"', script)
-        self.assertIn("colcon build --symlink-install --packages-select progetto_robotica", script)
+        self.assertIn("colcon build --packages-select progetto_robotica", script)
 
     def test_script_sources_expected_ros_environment(self):
         script = read_text("scripts/run_demo.sh")

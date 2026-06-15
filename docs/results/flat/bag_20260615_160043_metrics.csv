@@ -1,0 +1,2 @@
+scenario,bag_name,started_at,ended_at,duration_s,sample_count,telemetry_hz_avg,telemetry_hz_min,latency_ms_avg,latency_ms_p95,latency_ms_max,max_abs_roll_deg,max_abs_pitch_deg,min_z,max_z,fall_detected_count,flight_phase_count,left_contact_loss_count,right_contact_loss_count
+flat,bag_20260615_160043,2026-06-15T14:00:43.887Z,2026-06-15T14:01:39.613Z,55.73,1838,33.51,32,7.53,23.45,28.35,6.09,6.53,0.7532,0.7906,0,0,54,53

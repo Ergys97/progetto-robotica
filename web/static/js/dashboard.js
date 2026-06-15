@@ -404,13 +404,25 @@ function downloadMetricsJson() {
 
 function downloadMetricsCsv() {
     const summary = summarizeSessionMetrics();
-    const headers = Object.keys(summary);
-    const values = headers.map((key) => escapeCsvValue(summary[key]));
     downloadTextFile(
         `${summary.bag_name}_metrics.csv`,
-        `${headers.join(',')}\n${values.join(',')}\n`,
+        summaryToCsv(summary),
         'text/csv'
     );
+}
+
+function summaryToCsv(summary) {
+    const headers = Object.keys(summary);
+    const values = headers.map((key) => escapeCsvValue(summary[key]));
+    return `${headers.join(',')}\n${values.join(',')}\n`;
+}
+
+function saveMetricsToBackend(summary) {
+    return fetch('/api/metrics/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(summary)
+    }).then(res => res.json());
 }
 
 function escapeCsvValue(value) {
@@ -561,6 +573,10 @@ btnRecordStop.addEventListener('click', () => {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
+                const summary = summarizeSessionMetrics();
+                saveMetricsToBackend(summary).catch((error) => {
+                    console.warn('Salvataggio metriche non riuscito:', error);
+                });
                 btnRecordStart.disabled = false;
                 btnRecordStop.disabled = true;
                 recordBanner.classList.add('hidden');
@@ -596,4 +612,3 @@ checkRecordingStatus();
 document.getElementById('btn-reset').addEventListener('click', () => {
     fetch('/api/reset', { method: 'POST' });
 });
-

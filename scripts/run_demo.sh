@@ -38,6 +38,31 @@ safe_source() {
     set -u
 }
 
+remove_colon_path_prefix() {
+    local var_name="$1"
+    local blocked_prefix="$2"
+    local current="${!var_name:-}"
+    local result=""
+    local entry
+
+    if [[ -z "$current" ]]; then
+        return
+    fi
+
+    IFS=':' read -r -a entries <<< "$current"
+    for entry in "${entries[@]}"; do
+        if [[ -z "$entry" || "$entry" == "$blocked_prefix" || "$entry" == "$blocked_prefix/"* ]]; then
+            continue
+        fi
+        if [[ -z "$result" ]]; then
+            result="$entry"
+        else
+            result="${result}:${entry}"
+        fi
+    done
+    export "${var_name}=${result}"
+}
+
 if [[ $# -lt 1 ]]; then
     usage
     exit 2
@@ -91,6 +116,20 @@ done
 
 ros_setup="/opt/ros/${ROS_DISTRO_NAME}/setup.bash"
 install_setup="${ROS_WS}/install/setup.bash"
+wrong_src_ws="${HOME}/ros2_ws/src"
+wrong_src_install="${wrong_src_ws}/install"
+
+if [[ "$(realpath -m "$ROS_WS")" == "$(realpath -m "$wrong_src_ws")" ]]; then
+    echo "ROS_WS punta a ${ROS_WS}, ma deve puntare alla root del workspace, non a src." >&2
+    echo "Usa: unset ROS_WS   oppure   ROS_WS=${HOME}/ros2_ws bash scripts/run_demo.sh ${scenario_arg}" >&2
+    exit 1
+fi
+
+remove_colon_path_prefix AMENT_PREFIX_PATH "$wrong_src_install"
+remove_colon_path_prefix CMAKE_PREFIX_PATH "$wrong_src_install"
+remove_colon_path_prefix COLCON_PREFIX_PATH "$wrong_src_install"
+remove_colon_path_prefix PYTHONPATH "$wrong_src_install"
+remove_colon_path_prefix PATH "$wrong_src_install"
 
 if [[ -f "${VENV_DIR}/bin/activate" ]]; then
     safe_source "${VENV_DIR}/bin/activate"
@@ -107,7 +146,7 @@ safe_source "$ros_setup"
 if [[ "$build_first" == "True" ]]; then
     echo "Compilo ${PACKAGE_NAME} in ${ROS_WS}..."
     cd "$ROS_WS"
-    colcon build --symlink-install --packages-select progetto_robotica
+    colcon build --packages-select progetto_robotica
 fi
 
 if [[ ! -f "$install_setup" ]]; then

@@ -1,8 +1,17 @@
-from setuptools import find_packages, setup
 import os
 from glob import glob
 
+from setuptools import find_packages, setup
+from setuptools.command.install import install
+
 package_name = 'progetto_robotica'
+
+
+class RosInstallCommand(install):
+    def finalize_options(self):
+        super().finalize_options()
+        self.install_scripts = os.path.join(self.install_base, 'lib', package_name)
+
 
 setup(
     name=package_name,
@@ -23,7 +32,7 @@ setup(
     maintainer_email='ergysperdeda97@gmail.com',
     description='ROS 2 Teleoperation and Web Dashboard for Unitree G1 in MuJoCo',
     license='Apache-2.0',
-    tests_require=['pytest'],
+    cmdclass={'install': RosInstallCommand},
     entry_points={
         'console_scripts': [
             'mujoco_sim = progetto_robotica.mujoco_sim:main',

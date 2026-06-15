@@ -44,13 +44,23 @@ class RecordingPerformanceStaticTest(unittest.TestCase):
         self.assertIn("topics = constants.RECORDING_TOPIC_PROFILES.get(", web_node)
         self.assertIn("*topics", web_node)
 
+    def test_web_auto_saves_dashboard_metrics(self):
+        web_node = read_text("progetto_robotica/web_teleop.py")
+        dashboard = read_text("web/static/js/dashboard.js")
+
+        self.assertIn("@app.route('/api/metrics/save'", web_node)
+        self.assertIn("def save_metrics", web_node)
+        self.assertIn("metrics_dir = os.path.join(self.bag_dir, 'metrics')", web_node)
+        self.assertIn("saveMetricsToBackend(summary)", dashboard)
+        self.assertIn("fetch('/api/metrics/save'", dashboard)
+
     def test_readme_documents_recording_profiles_and_rate_controls(self):
         readme = read_text("README.md")
 
         self.assertIn("record_profile:=metrics", readme)
-        self.assertIn("telemetry_hz:=50", readme)
-        self.assertIn("csv_hz:=50", readme)
-        self.assertIn("viewer_fps:=15", readme)
+        self.assertIn("telemetry_hz:=50.0", readme)
+        self.assertIn("csv_hz:=50.0", readme)
+        self.assertIn("viewer_fps:=15.0", readme)
 
 
 if __name__ == "__main__":

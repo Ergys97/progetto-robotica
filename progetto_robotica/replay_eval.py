@@ -66,6 +66,8 @@ def run_replay(bag_name, bag_dir=DEFAULT_BAG_DIR, rl_gym=DEFAULT_RL_GYM):
     mujoco.mj_resetData(m, d)
     qpos_keys = sorted((k for k in rows[0] if k.startswith('qpos_')), key=lambda x: int(x.split('_')[1]))
     qvel_keys = sorted((k for k in rows[0] if k.startswith('qvel_')), key=lambda x: int(x.split('_')[1]))
+    target_keys = sorted((k for k in rows[0] if k.startswith('target_')), key=lambda x: int(x.split('_')[1]))
+    use_logged_targets = len(target_keys) == num_actions
     d.qpos[:] = [float(rows[0][k]) for k in qpos_keys]
     d.qvel[:] = [float(rows[0][k]) for k in qvel_keys]
 
@@ -87,27 +89,31 @@ def run_replay(bag_name, bag_dir=DEFAULT_BAG_DIR, rl_gym=DEFAULT_RL_GYM):
         counter += 1
         if counter % control_decimation == 0:
             sim_time = counter * simulation_dt
-            cmd[:] = cmds[sim_utils.find_log_index(sim_times, sim_time)]
+            log_idx = sim_utils.find_log_index(sim_times, sim_time)
+            if use_logged_targets:
+                target_dof_pos[:] = [float(rows[log_idx][k]) for k in target_keys]
+            else:
+                cmd[:] = cmds[log_idx]
 
-            qj = (d.qpos[7:] - default_angles) * dof_pos_scale
-            dqj = d.qvel[6:] * dof_vel_scale
-            gravity_orientation = sim_utils.get_gravity_orientation(d.qpos[3:7])
-            omega = d.qvel[3:6] * ang_vel_scale
+                qj = (d.qpos[7:] - default_angles) * dof_pos_scale
+                dqj = d.qvel[6:] * dof_vel_scale
+                gravity_orientation = sim_utils.get_gravity_orientation(d.qpos[3:7])
+                omega = d.qvel[3:6] * ang_vel_scale
 
-            period = 0.8
-            phase = sim_time % period / period
-            n = num_actions
-            obs[:3] = omega
-            obs[3:6] = gravity_orientation
-            obs[6:9] = cmd * cmd_scale
-            obs[9:9 + n] = qj
-            obs[9 + n:9 + 2 * n] = dqj
-            obs[9 + 2 * n:9 + 3 * n] = action
-            obs[9 + 3 * n:9 + 3 * n + 2] = np.array([np.sin(2 * np.pi * phase),
-                                                      np.cos(2 * np.pi * phase)])
-            with torch.no_grad():
-                action[:] = policy(torch.from_numpy(obs).unsqueeze(0)).numpy().squeeze()
-            target_dof_pos[:] = action * action_scale + default_angles
+                period = 0.8
+                phase = sim_time % period / period
+                n = num_actions
+                obs[:3] = omega
+                obs[3:6] = gravity_orientation
+                obs[6:9] = cmd * cmd_scale
+                obs[9:9 + n] = qj
+                obs[9 + n:9 + 2 * n] = dqj
+                obs[9 + 2 * n:9 + 3 * n] = action
+                obs[9 + 3 * n:9 + 3 * n + 2] = np.array([np.sin(2 * np.pi * phase),
+                                                          np.cos(2 * np.pi * phase)])
+                with torch.no_grad():
+                    action[:] = policy(torch.from_numpy(obs).unsqueeze(0)).numpy().squeeze()
+                target_dof_pos[:] = action * action_scale + default_angles
 
             replayed.append(d.qpos[0:3].copy())
 

@@ -30,7 +30,7 @@ source /opt/ros/jazzy/setup.bash
 cd ~/ros2_ws
 python3 -m colcon build
 ```
-*(Nota: Se preferisci usare `colcon build --symlink-install` per non dover ricompilare ad ogni modifica dei file Python, assicurati che la versione di `setuptools` nel venv supporti le installazioni editable, altrimenti esegui il build standard sopra descritto. Gli eseguibili saranno pronti sotto `install/progetto_robotica/bin/`).*
+*(Nota: in questo ambiente e consigliato il build standard sopra descritto. Alcune versioni di `setuptools` non supportano correttamente l'installazione editable usata da `colcon build --symlink-install`.)*
 
 ## Esecuzione
 Comandi consigliati da WSL, dal root del repository:
@@ -65,13 +65,15 @@ ros2 launch progetto_robotica teleop_sim_launch.py scenario:=obstacle_course
 ros2 launch progetto_robotica teleop_sim_launch.py headless:=True scenario:=obstacle_course
 
 # Registrazione stabile per replay/metriche
-ros2 launch progetto_robotica teleop_sim_launch.py headless:=True scenario:=flat record_profile:=metrics telemetry_hz:=50 csv_hz:=50 viewer_fps:=15
+ros2 launch progetto_robotica teleop_sim_launch.py headless:=True scenario:=flat record_profile:=metrics telemetry_hz:=50.0 csv_hz:=50.0 viewer_fps:=15.0
 ```
 
 Dashboard accessibile all'indirizzo: http://localhost:5000
 - Comandi di movimento: tasti WASD/QE (o gamepad USB), pulsante Stop (Spazio)
 - Gestione sessione: Start/Stop Record, Reset Sim.
-- Export metriche: pulsanti Scarica JSON/CSV per il riassunto della sessione.
+- Export metriche: al termine della registrazione il riassunto viene salvato in
+  `~/progetto_robotica_bags/metrics/`; i pulsanti Scarica JSON/CSV restano disponibili
+  per il download manuale.
 
 ## Scenari di prova
 - `flat`: piano regolare, usato per calibrazione comandi, telemetria e replay MSE.
@@ -83,15 +85,16 @@ Per eseguire il replay deterministico e calcolare le metriche (MSE traiettoria):
 ros2 run progetto_robotica replay_eval <bag_name>     # MSE vs sessione live
 ```
 I file mcap di rosbag2 e i file CSV di telemetria vengono salvati in `~/progetto_robotica_bags` (personalizzabile tramite parametro `bag_dir`).
+I riassunti JSON/CSV della dashboard vengono salvati in `~/progetto_robotica_bags/metrics`.
 Il protocollo di raccolta risultati e disponibile in `docs/metrics/protocollo-metriche.md`.
 
 Per ridurre il lag durante la registrazione:
 - `record_profile:=minimal` registra comandi, contatti, caduta e latenza.
 - `record_profile:=metrics` aggiunge `/odom` ed e il default consigliato per replay/metriche.
 - `record_profile:=full` registra anche `/imu` e `/joint_states`, utile per debug ma piu pesante.
-- `telemetry_hz:=50` limita i topic pubblicati dal simulatore.
-- `csv_hz:=50` limita il logging CSV.
-- `viewer_fps:=15` limita il sync del viewer; per misure stabili usare anche `headless:=True`.
+- `telemetry_hz:=50.0` limita i topic pubblicati dal simulatore.
+- `csv_hz:=50.0` limita il logging CSV.
+- `viewer_fps:=15.0` limita il sync del viewer; per misure stabili usare anche `headless:=True`.
 
 ## Architettura
 - `mujoco_sim`: bridge MuJoCo + policy RL (unitree_rl_gym), pubblica `/imu`, `/joint_states`, `/odom`, `/contacts/*`, `/fall_detected` e `/metrics/cmd_latency_ms`. Sottoscrive `/cmd_vel` (`TwistStamped`) e `/sim_reset`.
@@ -107,6 +110,7 @@ Esecuzione degli unit test (senza dipendenze ROS):
 ## Documentazione
 - `docs/proposal/`: proposta di progetto e testo estratto della traccia.
 - `docs/metrics/`: protocollo di misura e tabella risultati da compilare durante la demo.
+- `docs/results/`: risultati sperimentali selezionati per la relazione (`flat` e `obstacle_course`).
 - `docs/report/`: destinazione della relazione finale.
 - `docs/troubleshooting/`: note operative non essenziali al runtime.
 - `docs/archive/`: appunti di sviluppo e piani storici non necessari alla consegna.
