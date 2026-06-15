@@ -18,6 +18,7 @@ from std_msgs.msg import Bool, String, Empty, Float64
 from nav_msgs.msg import Odometry
 
 from ament_index_python.packages import get_package_share_directory
+from progetto_robotica import constants
 
 _share = get_package_share_directory('progetto_robotica')
 app = Flask(
@@ -57,34 +58,6 @@ telemetry_state = {
 
 state_lock = threading.Lock()
 
-RECORDING_TOPIC_PROFILES = {
-    "minimal": [
-        "/cmd_vel",
-        "/contacts/left",
-        "/contacts/right",
-        "/fall_detected",
-        "/metrics/cmd_latency_ms",
-    ],
-    "metrics": [
-        "/cmd_vel",
-        "/contacts/left",
-        "/contacts/right",
-        "/odom",
-        "/fall_detected",
-        "/metrics/cmd_latency_ms",
-    ],
-    "full": [
-        "/cmd_vel",
-        "/imu",
-        "/joint_states",
-        "/contacts/left",
-        "/contacts/right",
-        "/odom",
-        "/fall_detected",
-        "/metrics/cmd_latency_ms",
-    ],
-}
-
 class WebTeleopNode(Node):
     def __init__(self):
         super().__init__('web_teleop_node')
@@ -97,18 +70,18 @@ class WebTeleopNode(Node):
         self.record_profile = str(self.get_parameter('record_profile').value).strip().lower()
         
         # Publishers
-        self.cmd_vel_pub = self.create_publisher(TwistStamped, '/cmd_vel', 10)
-        self.rec_status_pub = self.create_publisher(String, '/recording_status', 10)
-        self.reset_pub = self.create_publisher(Empty, '/sim_reset', 10)
+        self.cmd_vel_pub = self.create_publisher(TwistStamped, constants.TOPIC_CMD_VEL, 10)
+        self.rec_status_pub = self.create_publisher(String, constants.TOPIC_RECORDING_STATUS, 10)
+        self.reset_pub = self.create_publisher(Empty, constants.TOPIC_SIM_RESET, 10)
         
         # Subscribers for telemetry
-        self.create_subscription(Imu, '/imu', self.imu_callback, 10)
-        self.create_subscription(JointState, '/joint_states', self.joint_states_callback, 10)
-        self.create_subscription(Bool, '/contacts/left', self.left_contact_callback, 10)
-        self.create_subscription(Bool, '/contacts/right', self.right_contact_callback, 10)
-        self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
-        self.create_subscription(Float64, '/metrics/cmd_latency_ms', self.latency_callback, 10)
-        self.create_subscription(Bool, '/fall_detected', self.fall_callback, 10)
+        self.create_subscription(Imu, constants.TOPIC_IMU, self.imu_callback, 10)
+        self.create_subscription(JointState, constants.TOPIC_JOINT_STATES, self.joint_states_callback, 10)
+        self.create_subscription(Bool, constants.TOPIC_CONTACT_LEFT, self.left_contact_callback, 10)
+        self.create_subscription(Bool, constants.TOPIC_CONTACT_RIGHT, self.right_contact_callback, 10)
+        self.create_subscription(Odometry, constants.TOPIC_ODOM, self.odom_callback, 10)
+        self.create_subscription(Float64, constants.TOPIC_CMD_LATENCY_MS, self.latency_callback, 10)
+        self.create_subscription(Bool, constants.TOPIC_FALL_DETECTED, self.fall_callback, 10)
         
         self.record_process = None
         self.bag_name = ""
@@ -269,11 +242,11 @@ class WebTeleopNode(Node):
         bag_path = os.path.join(bag_dir, self.bag_name)
         
         self.get_logger().info(f"Starting rosbag2 recording to: {bag_path}")
-        topics = RECORDING_TOPIC_PROFILES.get(self.record_profile)
+        topics = constants.RECORDING_TOPIC_PROFILES.get(self.record_profile)
         if topics is None:
             self.get_logger().warn(
                 f"Unknown record_profile '{self.record_profile}', falling back to metrics")
-            topics = RECORDING_TOPIC_PROFILES["metrics"]
+            topics = constants.RECORDING_TOPIC_PROFILES["metrics"]
         
         cmd = [
             "ros2", "bag", "record",

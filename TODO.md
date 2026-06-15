@@ -7,7 +7,7 @@ This document outlines the planned test scenarios and future extensions for the 
 - [x] **Flat Terrain Walking**: Standard flat regular surface for baseline walk, telemetry streaming, and trajectory MSE replay.
 
 ## 2. Scenario 2: Obstacle Course (Percorso ad Ostacoli Elementari)
-*Implemented in the `codex/scenario-ostacoli-ui-metriche` branch to validate safety alerts:*
+*Implemented to validate safety alerts:*
 - [x] **Obstacle Integration in XML**: Dynamically generated using the `scene_builder` Python helper, injecting a 3.5cm ramp and three progressive steps (2cm, 3cm, 4cm) at runtime.
 - [x] **Foot Contact Responsiveness Test**: Foot contact indicators switch color dynamically according to uneven terrain.
 - [x] **Flight Phase Alert Tuning**: Handled via simultaneous loss of foot contacts, showing a dynamic badge in the dashboard.

@@ -31,7 +31,7 @@ class FrontendStaticTest(unittest.TestCase):
         self.assertNotIn("letter-spacing: -", css)
 
     def test_metrics_protocol_declares_replay_scope(self):
-        metrics_doc = read_text("docs/metriche-demo.md")
+        metrics_doc = read_text("docs/metrics/protocollo-metriche.md")
 
         self.assertIn("La fedelta di replay viene misurata sullo scenario `flat`", metrics_doc)
         self.assertIn("Lo scenario `obstacle_course`", metrics_doc)

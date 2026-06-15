@@ -17,7 +17,7 @@ from sensor_msgs.msg import Imu, JointState
 from std_msgs.msg import Bool, Empty, String, Float64
 from nav_msgs.msg import Odometry
 
-from progetto_robotica import scene_builder, sim_utils
+from progetto_robotica import constants, scene_builder, sim_utils
 
 DEFAULT_RL_GYM = os.path.expanduser(os.environ.get('UNITREE_RL_GYM_PATH', '~/unitree_rl_gym'))
 
@@ -85,16 +85,16 @@ class MuJoCoSimNode(Node):
         self.last_cmd_rx = time.monotonic()
 
         # ROS I/O
-        self.cmd_vel_sub = self.create_subscription(TwistStamped, '/cmd_vel', self.cmd_vel_callback, 10)
-        self.latency_pub = self.create_publisher(Float64, '/metrics/cmd_latency_ms', 10)
-        self.rec_status_sub = self.create_subscription(String, '/recording_status', self.rec_status_callback, 10)
-        self.reset_sub = self.create_subscription(Empty, '/sim_reset', self.reset_callback, 10)
-        self.imu_pub = self.create_publisher(Imu, '/imu', 10)
-        self.joint_pub = self.create_publisher(JointState, '/joint_states', 10)
-        self.left_contact_pub = self.create_publisher(Bool, '/contacts/left', 10)
-        self.right_contact_pub = self.create_publisher(Bool, '/contacts/right', 10)
-        self.odom_pub = self.create_publisher(Odometry, '/odom', 10)
-        self.fall_pub = self.create_publisher(Bool, '/fall_detected', 10)
+        self.cmd_vel_sub = self.create_subscription(TwistStamped, constants.TOPIC_CMD_VEL, self.cmd_vel_callback, 10)
+        self.latency_pub = self.create_publisher(Float64, constants.TOPIC_CMD_LATENCY_MS, 10)
+        self.rec_status_sub = self.create_subscription(String, constants.TOPIC_RECORDING_STATUS, self.rec_status_callback, 10)
+        self.reset_sub = self.create_subscription(Empty, constants.TOPIC_SIM_RESET, self.reset_callback, 10)
+        self.imu_pub = self.create_publisher(Imu, constants.TOPIC_IMU, 10)
+        self.joint_pub = self.create_publisher(JointState, constants.TOPIC_JOINT_STATES, 10)
+        self.left_contact_pub = self.create_publisher(Bool, constants.TOPIC_CONTACT_LEFT, 10)
+        self.right_contact_pub = self.create_publisher(Bool, constants.TOPIC_CONTACT_RIGHT, 10)
+        self.odom_pub = self.create_publisher(Odometry, constants.TOPIC_ODOM, 10)
+        self.fall_pub = self.create_publisher(Bool, constants.TOPIC_FALL_DETECTED, 10)
 
         # MuJoCo
         generated_scene_dir = os.path.join(self.bag_dir, "_generated_scenes")

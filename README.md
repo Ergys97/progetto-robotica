@@ -83,6 +83,7 @@ Per eseguire il replay deterministico e calcolare le metriche (MSE traiettoria):
 ros2 run progetto_robotica replay_eval <bag_name>     # MSE vs sessione live
 ```
 I file mcap di rosbag2 e i file CSV di telemetria vengono salvati in `~/progetto_robotica_bags` (personalizzabile tramite parametro `bag_dir`).
+Il protocollo di raccolta risultati e disponibile in `docs/metrics/protocollo-metriche.md`.
 
 Per ridurre il lag durante la registrazione:
 - `record_profile:=minimal` registra comandi, contatti, caduta e latenza.
@@ -103,11 +104,9 @@ Esecuzione degli unit test (senza dipendenze ROS):
 ~/venv/bin/python -m pytest test/ -v
 ```
 
-## Tooling frontend opzionale
-Il runtime del progetto non richiede Node.js. `package.json` serve solo per usare
-`modern-web-guidance` in modo locale e riproducibile durante modifiche HTML/CSS/JS:
-```powershell
-npm.cmd install
-npm.cmd run mwg:search -- "responsive scientific dashboard"
-npm.cmd run mwg:retrieve -- "css-layout"
-```
+## Documentazione
+- `docs/proposal/`: proposta di progetto e testo estratto della traccia.
+- `docs/metrics/`: protocollo di misura e tabella risultati da compilare durante la demo.
+- `docs/report/`: destinazione della relazione finale.
+- `docs/troubleshooting/`: note operative non essenziali al runtime.
+- `docs/archive/`: appunti di sviluppo e piani storici non necessari alla consegna.

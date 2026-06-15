@@ -20,7 +20,7 @@
 - Modify `web/static/css/style.css`: palette neutra, no glassmorphism/glow, card compatte.
 - Modify `web/static/js/dashboard.js`: label coerenti, layout Plotly leggibile su palette minimale.
 - Modify `README.md`: istruzioni scenario piano/ostacoli.
-- Create `docs/metriche-demo.md`: protocollo prova e tabella risultati.
+- Create `docs/metrics/protocollo-metriche.md`: protocollo prova e tabella risultati.
 - Modify `TODO.md`: segnare lo scenario ostacoli come implementato, lasciando solo sviluppi futuri reali.
 
 ---
@@ -366,7 +366,7 @@ git commit -m "style: make dashboard minimal and scientific"
 **Files:**
 - Modify: `README.md`
 - Modify: `TODO.md`
-- Create: `docs/metriche-demo.md`
+- Create: `docs/metrics/protocollo-metriche.md`
 
 - [ ] **Step 1: Update README launch commands**
 
@@ -397,7 +397,7 @@ Add:
 
 - [ ] **Step 3: Create metrics protocol**
 
-Create `docs/metriche-demo.md`:
+Create `docs/metrics/protocollo-metriche.md`:
 
 ```markdown
 # Protocollo metriche demo
@@ -440,7 +440,7 @@ Move obstacle-course XML integration from unchecked future item to implemented s
 - [ ] **Step 5: Commit**
 
 ```bash
-git add README.md TODO.md docs/metriche-demo.md
+git add README.md TODO.md docs/metrics/protocollo-metriche.md
 git commit -m "docs: describe scenarios and demo metrics protocol"
 ```
 
@@ -467,7 +467,7 @@ Run:
 
 ```bash
 rg -n "LIVE SIM OBS|LIVE SIM ACTION|LIVE SIM TARGET|Premium|glassmorphism|CRITICAL ALERT" progetto_robotica web
-rg -n "/mnt/c|/home/ergys" progetto_robotica launch web README.md TODO.md docs/metriche-demo.md
+rg -n "/mnt/c|/home/ergys" progetto_robotica launch web README.md TODO.md docs/metrics/protocollo-metriche.md
 ```
 
 Expected: no matches for debug/UI-premium terms; no hardcoded personal paths in production/docs except intentionally documented default `~/...`.

@@ -48,7 +48,7 @@ Non si introduce un framework frontend: sarebbe sovradimensionato rispetto al de
 
 ## Documentazione e metriche
 
-Aggiungere una pagina `docs/metriche-demo.md` con protocollo di prova e tabella risultati da compilare durante la demo:
+Aggiungere una pagina `docs/metrics/protocollo-metriche.md` con protocollo di prova e tabella risultati da compilare durante la demo:
 
 - scenario piano: telemetria, latenza, replay MSE;
 - scenario ostacoli: contatti, flight phase, fall detection;

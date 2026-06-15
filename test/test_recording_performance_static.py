@@ -35,11 +35,13 @@ class RecordingPerformanceStaticTest(unittest.TestCase):
 
     def test_web_recording_uses_lightweight_profiles_and_mcap(self):
         web_node = read_text("progetto_robotica/web_teleop.py")
+        constants = read_text("progetto_robotica/constants.py")
 
         self.assertIn("RECORDING_TOPIC_PROFILES", web_node)
+        self.assertIn("RECORDING_TOPIC_PROFILES", constants)
         self.assertIn("self.declare_parameter('record_profile', 'metrics')", web_node)
         self.assertIn('"--storage", "mcap"', web_node)
-        self.assertIn("topics = RECORDING_TOPIC_PROFILES.get(", web_node)
+        self.assertIn("topics = constants.RECORDING_TOPIC_PROFILES.get(", web_node)
         self.assertIn("*topics", web_node)
 
     def test_readme_documents_recording_profiles_and_rate_controls(self):
