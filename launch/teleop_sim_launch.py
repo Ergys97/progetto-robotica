@@ -20,6 +20,14 @@ def generate_launch_description():
             default_value=os.path.expanduser('~/progetto_robotica_bags')),
         DeclareLaunchArgument('scenario', default_value='flat',
                               description='Scenario MuJoCo: flat oppure obstacle_course'),
+        DeclareLaunchArgument('telemetry_hz', default_value='50',
+                              description='Frequenza topic ROS pubblicati dal simulatore'),
+        DeclareLaunchArgument('csv_hz', default_value='50',
+                              description='Frequenza logging CSV durante la registrazione'),
+        DeclareLaunchArgument('viewer_fps', default_value='15',
+                              description='Frequenza massima sync viewer MuJoCo'),
+        DeclareLaunchArgument('record_profile', default_value='metrics',
+                              description='Profilo rosbag: minimal, metrics oppure full'),
     ]
 
     sim_node = Node(
@@ -32,13 +40,20 @@ def generate_launch_description():
             'config_path': LaunchConfiguration('config_path'),
             'bag_dir': LaunchConfiguration('bag_dir'),
             'scenario': LaunchConfiguration('scenario'),
+            'telemetry_hz': LaunchConfiguration('telemetry_hz'),
+            'csv_hz': LaunchConfiguration('csv_hz'),
+            'viewer_fps': LaunchConfiguration('viewer_fps'),
         }],
     )
 
     web_node = Node(
         package='progetto_robotica', executable='web_teleop',
         name='web_teleop_node', output='screen',
-        parameters=[{'bag_dir': LaunchConfiguration('bag_dir')}],
+        parameters=[{
+            'bag_dir': LaunchConfiguration('bag_dir'),
+            'scenario': LaunchConfiguration('scenario'),
+            'record_profile': LaunchConfiguration('record_profile'),
+        }],
     )
 
     return LaunchDescription(args + [sim_node, web_node])

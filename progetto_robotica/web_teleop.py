@@ -57,12 +57,44 @@ telemetry_state = {
 
 state_lock = threading.Lock()
 
+RECORDING_TOPIC_PROFILES = {
+    "minimal": [
+        "/cmd_vel",
+        "/contacts/left",
+        "/contacts/right",
+        "/fall_detected",
+        "/metrics/cmd_latency_ms",
+    ],
+    "metrics": [
+        "/cmd_vel",
+        "/contacts/left",
+        "/contacts/right",
+        "/odom",
+        "/fall_detected",
+        "/metrics/cmd_latency_ms",
+    ],
+    "full": [
+        "/cmd_vel",
+        "/imu",
+        "/joint_states",
+        "/contacts/left",
+        "/contacts/right",
+        "/odom",
+        "/fall_detected",
+        "/metrics/cmd_latency_ms",
+    ],
+}
+
 class WebTeleopNode(Node):
     def __init__(self):
         super().__init__('web_teleop_node')
         
         self.declare_parameter('bag_dir', os.path.expanduser('~/progetto_robotica_bags'))
+        self.declare_parameter('scenario', 'flat')
+        self.declare_parameter('record_profile', 'metrics')
         self.bag_dir = os.path.expanduser(self.get_parameter('bag_dir').value)
+        self.scenario = self.get_parameter('scenario').value
+        self.record_profile = str(self.get_parameter('record_profile').value).strip().lower()
         
         # Publishers
         self.cmd_vel_pub = self.create_publisher(TwistStamped, '/cmd_vel', 10)
@@ -237,18 +269,17 @@ class WebTeleopNode(Node):
         bag_path = os.path.join(bag_dir, self.bag_name)
         
         self.get_logger().info(f"Starting rosbag2 recording to: {bag_path}")
+        topics = RECORDING_TOPIC_PROFILES.get(self.record_profile)
+        if topics is None:
+            self.get_logger().warn(
+                f"Unknown record_profile '{self.record_profile}', falling back to metrics")
+            topics = RECORDING_TOPIC_PROFILES["metrics"]
         
         cmd = [
             "ros2", "bag", "record",
+            "--storage", "mcap",
             "-o", bag_path,
-            "/cmd_vel",
-            "/imu",
-            "/joint_states",
-            "/contacts/left",
-            "/contacts/right",
-            "/odom",
-            "/fall_detected",
-            "/metrics/cmd_latency_ms"
+            *topics,
         ]
         
         self.record_process = subprocess.Popen(
@@ -301,6 +332,8 @@ def get_status():
     return jsonify({
         'is_recording': ros_node.is_recording,
         'bag_name': ros_node.bag_name,
+        'scenario': ros_node.scenario,
+        'record_profile': ros_node.record_profile,
         'telemetry_age_seconds': time.time() - telemetry_state['last_update']
     })
 

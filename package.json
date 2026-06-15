@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "mwg:search": "modern-web-guidance search --skill-version 2026_05_16-c5e7870",
+    "mwg:retrieve": "modern-web-guidance retrieve"
+  },
+  "devDependencies": {
+    "modern-web-guidance": "^0.0.172"
+  }
+}

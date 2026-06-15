@@ -6,3 +6,5 @@ install/
 log/
 *.egg-info/
 .pytest_cache/
+.npm-cache/
+node_modules/

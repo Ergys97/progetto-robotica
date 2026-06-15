@@ -34,6 +34,9 @@ class MuJoCoSimNode(Node):
         self.declare_parameter('cmd_timeout', 0.5)
         self.declare_parameter('fall_threshold_deg', 35.0)
         self.declare_parameter('scenario', 'flat')
+        self.declare_parameter('telemetry_hz', 50.0)
+        self.declare_parameter('csv_hz', 50.0)
+        self.declare_parameter('viewer_fps', 15.0)
 
         xml_path = self.get_parameter('xml_path').value
         policy_path = self.get_parameter('policy_path').value
@@ -43,6 +46,9 @@ class MuJoCoSimNode(Node):
         self.cmd_timeout = self.get_parameter('cmd_timeout').value
         self.fall_threshold_deg = self.get_parameter('fall_threshold_deg').value
         scenario = self.get_parameter('scenario').value
+        telemetry_hz = float(self.get_parameter('telemetry_hz').value)
+        csv_hz = float(self.get_parameter('csv_hz').value)
+        viewer_fps = float(self.get_parameter('viewer_fps').value)
 
         with open(config_path, 'r') as f:
             self.config = yaml.load(f, Loader=yaml.FullLoader)
@@ -59,6 +65,9 @@ class MuJoCoSimNode(Node):
         self.cmd_scale = np.array(self.config["cmd_scale"], dtype=np.float32)
         self.num_actions = self.config["num_actions"]
         self.num_obs = self.config["num_obs"]
+        self.telemetry_step_interval = sim_utils.rate_to_step_interval(self.simulation_dt, telemetry_hz)
+        self.csv_step_interval = sim_utils.rate_to_step_interval(self.simulation_dt, csv_hz)
+        self.viewer_step_interval = sim_utils.rate_to_step_interval(self.simulation_dt, viewer_fps)
 
         # Stato di simulazione (attributi: servono per il reset deterministico)
         self.cmd = np.array(self.config["cmd_init"], dtype=np.float32)
@@ -224,9 +233,12 @@ class MuJoCoSimNode(Node):
                 self.counter += 1
                 if self.counter % self.control_decimation == 0:
                     self.evaluate_policy()
-                self.publish_telemetries()
+                if self.is_logging_csv and self.counter % self.csv_step_interval == 0:
+                    self._write_csv_row()
+                if self.counter % self.telemetry_step_interval == 0:
+                    self.publish_telemetries()
 
-                if viewer is not None and self.counter % self.control_decimation == 0:
+                if viewer is not None and self.counter % self.viewer_step_interval == 0:
                     viewer.sync()
 
                 time_until_next_step = self.simulation_dt - (time.time() - step_start)
@@ -263,9 +275,6 @@ class MuJoCoSimNode(Node):
 
 
     def publish_telemetries(self):
-        if self.is_logging_csv:
-            self._write_csv_row()
-
         # 1. Contatti piedi
         contact_pairs = [(self.d.contact[i].geom1, self.d.contact[i].geom2) for i in range(self.d.ncon)]
         left_contact, right_contact = sim_utils.detect_foot_contacts(

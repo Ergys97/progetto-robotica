@@ -37,6 +37,13 @@ def find_log_index(sim_times, t):
     return max(0, min(i, len(sim_times) - 1))
 
 
+def rate_to_step_interval(simulation_dt, rate_hz):
+    """Convert a target frequency to a simulation-step interval."""
+    if rate_hz <= 0 or simulation_dt <= 0:
+        return 1
+    return max(1, int(round(1.0 / (simulation_dt * rate_hz))))
+
+
 def detect_foot_contacts(contacts, support_geom_ids, left_foot_geom_ids, right_foot_geom_ids):
     """Detect foot contacts against floor-like support geoms."""
     support_geom_ids = set(support_geom_ids)

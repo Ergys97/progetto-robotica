@@ -9,6 +9,7 @@ from progetto_robotica.sim_utils import (
     is_fallen,
     pd_control,
     quat_to_roll_pitch,
+    rate_to_step_interval,
 )
 
 
@@ -53,6 +54,12 @@ class SimUtilsTest(unittest.TestCase):
         self.assertEqual(find_log_index(times, 0.02), 1)
         self.assertEqual(find_log_index(times, 99.0), 2)
         self.assertEqual(find_log_index(times, -1.0), 0)
+
+    def test_rate_to_step_interval(self):
+        self.assertEqual(rate_to_step_interval(0.002, 50), 10)
+        self.assertEqual(rate_to_step_interval(0.002, 33), 15)
+        self.assertEqual(rate_to_step_interval(0.002, 0), 1)
+        self.assertEqual(rate_to_step_interval(0.002, -1), 1)
 
     def test_detect_foot_contacts_counts_obstacles_as_support(self):
         contacts = [(10, 99), (42, 11)]

@@ -33,6 +33,25 @@ python3 -m colcon build
 *(Nota: Se preferisci usare `colcon build --symlink-install` per non dover ricompilare ad ogni modifica dei file Python, assicurati che la versione di `setuptools` nel venv supporti le installazioni editable, altrimenti esegui il build standard sopra descritto. Gli eseguibili saranno pronti sotto `install/progetto_robotica/bin/`).*
 
 ## Esecuzione
+Comandi consigliati da WSL, dal root del repository:
+```bash
+# Scenario piano
+bash scripts/run_demo.sh flat
+
+# Scenario a ostacoli elementari
+bash scripts/run_demo.sh obstacle
+
+# Modalita headless
+bash scripts/run_demo.sh obstacle --headless
+
+# Ricompila prima del launch
+bash scripts/run_demo.sh flat --build
+```
+
+Lo script attiva `~/venv` se presente, carica ROS 2 Jazzy, carica
+`~/ros2_ws/install/setup.bash` e avvia il launch corretto.
+
+Comandi ROS equivalenti:
 ```bash
 source ~/ros2_ws/install/setup.bash
 
@@ -44,11 +63,15 @@ ros2 launch progetto_robotica teleop_sim_launch.py scenario:=obstacle_course
 
 # Modalita headless
 ros2 launch progetto_robotica teleop_sim_launch.py headless:=True scenario:=obstacle_course
+
+# Registrazione stabile per replay/metriche
+ros2 launch progetto_robotica teleop_sim_launch.py headless:=True scenario:=flat record_profile:=metrics telemetry_hz:=50 csv_hz:=50 viewer_fps:=15
 ```
 
 Dashboard accessibile all'indirizzo: http://localhost:5000
 - Comandi di movimento: tasti WASD/QE (o gamepad USB), pulsante Stop (Spazio)
 - Gestione sessione: Start/Stop Record, Reset Sim.
+- Export metriche: pulsanti Scarica JSON/CSV per il riassunto della sessione.
 
 ## Scenari di prova
 - `flat`: piano regolare, usato per calibrazione comandi, telemetria e replay MSE.
@@ -61,6 +84,14 @@ ros2 run progetto_robotica replay_eval <bag_name>     # MSE vs sessione live
 ```
 I file mcap di rosbag2 e i file CSV di telemetria vengono salvati in `~/progetto_robotica_bags` (personalizzabile tramite parametro `bag_dir`).
 
+Per ridurre il lag durante la registrazione:
+- `record_profile:=minimal` registra comandi, contatti, caduta e latenza.
+- `record_profile:=metrics` aggiunge `/odom` ed e il default consigliato per replay/metriche.
+- `record_profile:=full` registra anche `/imu` e `/joint_states`, utile per debug ma piu pesante.
+- `telemetry_hz:=50` limita i topic pubblicati dal simulatore.
+- `csv_hz:=50` limita il logging CSV.
+- `viewer_fps:=15` limita il sync del viewer; per misure stabili usare anche `headless:=True`.
+
 ## Architettura
 - `mujoco_sim`: bridge MuJoCo + policy RL (unitree_rl_gym), pubblica `/imu`, `/joint_states`, `/odom`, `/contacts/*`, `/fall_detected` e `/metrics/cmd_latency_ms`. Sottoscrive `/cmd_vel` (`TwistStamped`) e `/sim_reset`.
 - `web_teleop`: Flask-SocketIO + teleop tastiera/gamepad, streaming telemetria a ~33 Hz verso la dashboard e inoltro dei comandi.
@@ -70,4 +101,13 @@ I file mcap di rosbag2 e i file CSV di telemetria vengono salvati in `~/progetto
 Esecuzione degli unit test (senza dipendenze ROS):
 ```bash
 ~/venv/bin/python -m pytest test/ -v
+```
+
+## Tooling frontend opzionale
+Il runtime del progetto non richiede Node.js. `package.json` serve solo per usare
+`modern-web-guidance` in modo locale e riproducibile durante modifiche HTML/CSS/JS:
+```powershell
+npm.cmd install
+npm.cmd run mwg:search -- "responsive scientific dashboard"
+npm.cmd run mwg:retrieve -- "css-layout"
 ```
