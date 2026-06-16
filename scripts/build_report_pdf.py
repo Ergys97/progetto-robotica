@@ -14,10 +14,21 @@ from matplotlib.backends.backend_pdf import PdfPages
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs" / "report" / "relazione_finale.pdf"
 FIG_DIR = ROOT / "docs" / "report" / "figures"
+ARCHITECTURE_IMAGE = ROOT / "architettura_ros2.png"
 
 PAGE_W = 8.27
 PAGE_H = 11.69
-MARGIN_X = 0.62
+MARGIN_CM = 2.0
+MARGIN_X = MARGIN_CM / 2.54
+MARGIN_Y = MARGIN_CM / 2.54
+CONTENT_W = PAGE_W - 2 * MARGIN_X
+TOP_Y = PAGE_H - MARGIN_Y
+BODY_FONT_SIZE = 11.0
+LINE_SPACING = 1.08
+BODY_LEADING = BODY_FONT_SIZE * LINE_SPACING / 72.0
+CAPTION_FONT_SIZE = 9.0
+CAPTION_LEADING = CAPTION_FONT_SIZE * LINE_SPACING / 72.0
+TABLE_FONT_SIZE = 8.2
 
 TOKENS = {
     "surface": "#FFFFFF",
@@ -40,18 +51,18 @@ def new_page(pdf: PdfPages) -> tuple[plt.Figure, plt.Axes]:
 
 
 def finish_page(pdf: PdfPages, fig: plt.Figure, page: int) -> None:
-    fig.text(0.5, 0.028, f"{page}", ha="center", va="center", fontsize=8, color=TOKENS["muted"])
+    fig.text(0.5, 0.035, f"{page}", ha="center", va="center", fontsize=8, color=TOKENS["muted"])
     pdf.savefig(fig)
     plt.close(fig)
 
 
-def add_heading(ax: plt.Axes, y: float, text: str, size: float = 15.0) -> float:
+def add_heading(ax: plt.Axes, y: float, text: str, size: float = 14.0) -> float:
     ax.text(MARGIN_X, y, text, ha="left", va="top", fontsize=size, weight="bold", color=TOKENS["ink"])
     ax.plot([MARGIN_X, PAGE_W - MARGIN_X], [y - 0.18, y - 0.18], color=TOKENS["rule"], linewidth=0.8)
-    return y - 0.42
+    return y - 0.34
 
 
-def add_paragraph(ax: plt.Axes, y: float, text: str, width: int = 95, size: float = 9.2, leading: float = 0.20) -> float:
+def add_paragraph(ax: plt.Axes, y: float, text: str, width: int = 80, size: float = BODY_FONT_SIZE, leading: float = BODY_LEADING) -> float:
     lines: list[str] = []
     for paragraph in text.split("\n"):
         if not paragraph.strip():
@@ -62,32 +73,32 @@ def add_paragraph(ax: plt.Axes, y: float, text: str, width: int = 95, size: floa
     for line in lines:
         ax.text(MARGIN_X, y, line, ha="left", va="top", fontsize=size, color=TOKENS["ink"])
         y -= leading
-    return y - 0.06
+    return y - 0.04
 
 
-def add_bullets(ax: plt.Axes, y: float, items: list[str], width: int = 88, size: float = 9.2) -> float:
+def add_bullets(ax: plt.Axes, y: float, items: list[str], width: int = 76, size: float = BODY_FONT_SIZE) -> float:
     for item in items:
         wrapped = textwrap.wrap(item, width=width, break_long_words=False)
         ax.text(MARGIN_X + 0.15, y, "-", ha="left", va="top", fontsize=size, color=TOKENS["blue"])
         ax.text(MARGIN_X + 0.36, y, wrapped[0], ha="left", va="top", fontsize=size, color=TOKENS["ink"])
-        y -= 0.20
+        y -= BODY_LEADING
         for line in wrapped[1:]:
             ax.text(MARGIN_X + 0.36, y, line, ha="left", va="top", fontsize=size, color=TOKENS["ink"])
-            y -= 0.20
+            y -= BODY_LEADING
     return y - 0.04
 
 
-def add_image(ax: plt.Axes, y: float, image_name: str, caption: str, height: float, width: float = 7.0) -> float:
-    image_path = FIG_DIR / image_name
+def add_image(ax: plt.Axes, y: float, image_name: str | Path, caption: str, height: float, width: float = CONTENT_W) -> float:
+    image_path = image_name if isinstance(image_name, Path) else FIG_DIR / image_name
     image = mpimg.imread(image_path)
     x = (PAGE_W - width) / 2
     ax.imshow(image, extent=[x, x + width, y - height, y], aspect="auto")
-    wrapped = textwrap.wrap(caption, width=95, break_long_words=False)
-    y -= height + 0.16
+    wrapped = textwrap.wrap(caption, width=86, break_long_words=False)
+    y -= height + 0.12
     for line in wrapped:
-        ax.text(MARGIN_X, y, line, ha="left", va="top", fontsize=7.8, color=TOKENS["muted"], style="italic")
-        y -= 0.16
-    return y - 0.10
+        ax.text(MARGIN_X, y, line, ha="left", va="top", fontsize=CAPTION_FONT_SIZE, color=TOKENS["muted"], style="italic")
+        y -= CAPTION_LEADING
+    return y - 0.08
 
 
 def add_table(ax: plt.Axes, y: float, rows: list[list[str]], col_widths: list[float], row_h: float = 0.31) -> float:
@@ -99,7 +110,7 @@ def add_table(ax: plt.Axes, y: float, rows: list[list[str]], col_widths: list[fl
         ax.add_patch(plt.Rectangle((x0, y - row_h), table_w, row_h, facecolor=fill, edgecolor=TOKENS["rule"], linewidth=0.5))
         for c, value in enumerate(row):
             weight = "bold" if r == 0 else "normal"
-            ax.text(x + 0.04, y - 0.08, value, ha="left", va="top", fontsize=7.0, weight=weight, color=TOKENS["ink"])
+            ax.text(x + 0.04, y - 0.08, value, ha="left", va="top", fontsize=TABLE_FONT_SIZE, weight=weight, color=TOKENS["ink"])
             x += col_widths[c]
             if c < len(row) - 1:
                 ax.plot([x, x], [y - row_h, y], color=TOKENS["rule"], linewidth=0.4)
@@ -114,10 +125,10 @@ def build() -> None:
         ax.text(
             MARGIN_X,
             10.70,
-            "Teleoperazione ROS 2 di Unitree G1\ncon dashboard realtime e validazione sperimentale",
+            "Teleoperazione ROS 2 di Unitree G1\ncon dashboard realtime\ne validazione sperimentale",
             ha="left",
             va="top",
-            fontsize=21,
+            fontsize=20,
             weight="bold",
             color=TOKENS["ink"],
             linespacing=1.18,
@@ -125,7 +136,7 @@ def build() -> None:
         ax.text(MARGIN_X, 9.45, "Progetto di Robotica - Traccia 10", fontsize=12, color=TOKENS["blue"], weight="bold")
         ax.text(MARGIN_X, 9.10, "Studente: Ergys Perdeda", fontsize=10.5, color=TOKENS["ink"])
         ax.text(MARGIN_X, 8.86, "Anno accademico: 2025/2026", fontsize=10.5, color=TOKENS["ink"])
-        ax.add_patch(plt.Rectangle((MARGIN_X, 8.10), 7.0, 0.04, facecolor=TOKENS["blue"], edgecolor="none"))
+        ax.add_patch(plt.Rectangle((MARGIN_X, 8.10), CONTENT_W, 0.04, facecolor=TOKENS["blue"], edgecolor="none"))
 
         y = add_heading(ax, 7.52, "Abstract tecnico", size=14)
         y = add_paragraph(
@@ -140,8 +151,6 @@ def build() -> None:
             "replay deterministico con MSE nullo nella prova selezionata. Lo scenario a ostacoli "
             "conferma la reattivita degli alert, con 4 eventi di caduta, 79 flight phase e variazioni "
             "coerenti dei contatti ai piedi.",
-            width=94,
-            size=9.4,
         )
         y = add_heading(ax, y - 0.12, "Obiettivo", size=14)
         y = add_paragraph(
@@ -165,7 +174,7 @@ def build() -> None:
         finish_page(pdf, fig, 1)
 
         fig, ax = new_page(pdf)
-        y = add_heading(ax, 10.95, "Architettura del sistema", size=15)
+        y = add_heading(ax, TOP_Y, "Architettura del sistema", size=15)
         y = add_paragraph(
             ax,
             y,
@@ -177,10 +186,9 @@ def build() -> None:
         y = add_image(
             ax,
             y - 0.04,
-            "architettura_ros2.png",
+            ARCHITECTURE_IMAGE,
             "Figura 1 - Architettura logica del sistema e principali flussi tra input, dashboard, simulazione, rosbag2 e replay.",
-            height=3.65,
-            width=7.25,
+            height=3.43,
         )
         topic_rows = [
             ["Topic", "Ruolo"],
@@ -190,11 +198,11 @@ def build() -> None:
             ["/fall_detected", "Segnalazione di caduta basata su roll/pitch"],
             ["/metrics/cmd_latency_ms", "Latenza tra comando utente e ricezione nel simulatore"],
         ]
-        add_table(ax, y, topic_rows, [2.25, 4.75], row_h=0.30)
+        add_table(ax, y, topic_rows, [2.05, 4.55], row_h=0.30)
         finish_page(pdf, fig, 2)
 
         fig, ax = new_page(pdf)
-        y = add_heading(ax, 10.95, "Scenari e metriche", size=15)
+        y = add_heading(ax, TOP_Y, "Scenari e metriche", size=15)
         y = add_paragraph(
             ax,
             y,
@@ -210,25 +218,24 @@ def build() -> None:
             ["MSE replay", "< 1e-4 m^2", "Riproducibilita traiettoria"],
             ["Fall/flight/contact", "eventi rilevati", "Validazione alert di sicurezza"],
         ]
-        y = add_table(ax, y, metric_rows, [2.35, 1.55, 3.10], row_h=0.33)
+        y = add_table(ax, y, metric_rows, [2.20, 1.45, 2.95], row_h=0.33)
         y = add_image(
             ax,
             y - 0.08,
             "latenza_comandi.png",
-            "Figura 2 - Media e p95 restano sotto il target di 50 ms; il massimo obstacle e un picco isolato.",
+            "Figura 2 - Media e p95 restano sotto il target di 50 ms; il massimo obstacle e annotato come picco isolato.",
             height=3.85,
-            width=7.20,
         )
         finish_page(pdf, fig, 3)
 
         fig, ax = new_page(pdf)
-        y = add_heading(ax, 10.95, "Risultati sperimentali", size=15)
+        y = add_heading(ax, TOP_Y, "Risultati sperimentali", size=15)
         result_rows = [
             ["Scenario", "Metrica", "Valore osservato", "Esito"],
             ["flat", "Telemetria media/min", "33.51 Hz / 32 Hz", "OK"],
             ["flat", "Latenza media/p95/max", "7.53 / 23.45 / 28.35 ms", "OK"],
             ["flat", "MSE replay", "0.00000000 m^2", "OK"],
-            ["obstacle", "Telemetria media", "32.93 Hz", "OK"],
+            ["obstacle", "Telemetria media/min", "32.93 Hz / 3 Hz", "OK medio"],
             ["obstacle", "Latenza media/p95", "9.57 / 26.35 ms", "OK"],
             ["obstacle", "Fall / flight", "4 / 79 eventi", "OK"],
             ["obstacle", "Perdite contatto L/R", "114 / 139", "OK"],
@@ -239,36 +246,41 @@ def build() -> None:
             y,
             "Il replay deterministico e stato valutato sullo scenario flat, dove la traiettoria e "
             "piu adatta a un confronto stabile. Lo scenario obstacle e invece orientato alla "
-            "validazione degli alert e degli stati critici.",
+            "validazione degli alert e degli stati critici; la frequenza media resta sopra target "
+            "ma il minimo transitorio a 3 Hz viene considerato un rallentamento locale.",
         )
         y = add_image(
             ax,
             y - 0.06,
+            "traiettoria_flat.png",
+            "Figura 3 - Traiettoria XY sul piano usata per la verifica del replay deterministico.",
+            height=2.35,
+            width=5.70,
+        )
+        y = add_image(
+            ax,
+            y - 0.02,
             "eventi_obstacle.png",
-            "Figura 3 - Conteggio degli eventi critici nello scenario obstacle_course: caduta, flight phase e perdite di contatto.",
-            height=3.30,
-            width=7.15,
+            "Figura 4 - Conteggio degli eventi critici nello scenario obstacle_course: caduta, flight phase e perdite di contatto.",
+            height=2.55,
         )
         finish_page(pdf, fig, 4)
 
         fig, ax = new_page(pdf)
-        y = add_heading(ax, 10.95, "Analisi critica e conclusioni", size=15)
+        y = add_heading(ax, TOP_Y, "Analisi critica e conclusioni", size=15)
         y = add_paragraph(
             ax,
             y,
             "Nel grafico seguente i segmenti temporali sono rappresentati in sequenza relativa, "
             "poiche durante la prova obstacle sono presenti reset della simulazione e discontinuita "
             "nel log. Questa scelta evita di sovrapporre campioni con lo stesso sim_time.",
-            width=94,
-            size=8.9,
         )
         y = add_image(
             ax,
             y,
             "assetto_quota_obstacle.png",
-            "Figura 4 - Roll, pitch e quota base nello scenario a ostacoli; i segmenti sono separati nei punti di reset/discontinuita.",
+            "Figura 5 - Roll, pitch e quota base nello scenario a ostacoli; i segmenti sono separati nei punti di reset/discontinuita.",
             height=4.05,
-            width=7.25,
         )
         y = add_paragraph(
             ax,
@@ -283,8 +295,10 @@ def build() -> None:
             y,
             "Restano alcuni limiti: il progetto e interamente simulativo, la velocita comandata "
             "non e calibrata automaticamente rispetto alla velocita effettiva, e l'odometria non "
-            "e stata confrontata in modo sistematico con il ground truth MuJoCo. Sviluppi futuri "
-            "includono calibrazione automatica, analisi del drift laterale e adattamento a robot fisico.",
+            "e stata confrontata in modo sistematico con il ground truth MuJoCo. Nello scenario "
+            "a ostacoli restano inoltre picchi occasionali di latenza e brevi cali di frequenza. "
+            "Sviluppi futuri includono calibrazione automatica, analisi del drift laterale e "
+            "adattamento a robot fisico.",
         )
         finish_page(pdf, fig, 5)
 

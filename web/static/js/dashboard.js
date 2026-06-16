@@ -26,20 +26,7 @@ const btnDownloadJson = document.getElementById('btn-download-json');
 const btnDownloadCsv = document.getElementById('btn-download-csv');
 
 // Configurazione grafici Plotly
-const maxDataPoints = 100;
-const chartUpdateIntervalMs = 200;
-let timeData = [];
-let imuData = { x: [], y: [], z: [] };
-let jointData = {
-    left_hip: [],
-    left_knee: [],
-    left_ankle: [],
-    right_hip: [],
-    right_knee: [],
-    right_ankle: []
-};
-let latencyData = [];
-let lastChartUpdateMs = 0;
+const maxDataPoints = 150;
 
 let currentScenario = 'flat';
 let currentBagName = 'dashboard_session';
@@ -56,15 +43,15 @@ const chartColors = {
 // Grafico IMU
 const imuPlotDiv = document.getElementById('plot-imu');
 const imuTraces = [
-    { x: timeData, y: imuData.x, name: 'Acc X', mode: 'lines', line: { color: '#ef4444', width: 2 } },
-    { x: timeData, y: imuData.y, name: 'Acc Y', mode: 'lines', line: { color: '#06b6d4', width: 2 } },
-    { x: timeData, y: imuData.z, name: 'Acc Z', mode: 'lines', line: { color: '#8b5cf6', width: 2 } }
+    { x: [], y: [], name: 'Acc X', mode: 'lines', line: { color: '#ef4444', width: 2 } },
+    { x: [], y: [], name: 'Acc Y', mode: 'lines', line: { color: '#06b6d4', width: 2 } },
+    { x: [], y: [], name: 'Acc Z', mode: 'lines', line: { color: '#8b5cf6', width: 2 } }
 ];
 const imuLayout = {
     paper_bgcolor: chartColors.paper,
     plot_bgcolor: chartColors.plot,
     margin: { t: 20, b: 30, l: 40, r: 10 },
-    xaxis: { color: chartColors.axis, showgrid: false, zeroline: false },
+    xaxis: { type: 'date', color: chartColors.axis, showgrid: false, zeroline: false, tickformat: '%H:%M:%S' },
     yaxis: { color: chartColors.axis, gridcolor: chartColors.grid, zeroline: false },
     legend: { font: { color: chartColors.axis }, orientation: 'h', y: -0.2 }
 };
@@ -73,16 +60,16 @@ Plotly.newPlot(imuPlotDiv, imuTraces, imuLayout, { displayModeBar: false });
 // Grafico giunti
 const jointsPlotDiv = document.getElementById('plot-joints');
 const jointTraces = [
-    { x: timeData, y: jointData.left_knee, name: 'Ginocchio SX', mode: 'lines', line: { color: '#7c3aed', width: 1.5 } },
-    { x: timeData, y: jointData.right_knee, name: 'Ginocchio DX', mode: 'lines', line: { color: '#db2777', width: 1.5 } },
-    { x: timeData, y: jointData.left_ankle, name: 'Caviglia SX', mode: 'lines', line: { color: '#2563eb', width: 1.5 } },
-    { x: timeData, y: jointData.right_ankle, name: 'Caviglia DX', mode: 'lines', line: { color: '#059669', width: 1.5 } }
+    { x: [], y: [], name: 'Ginocchio SX', mode: 'lines', line: { color: '#7c3aed', width: 1.5 } },
+    { x: [], y: [], name: 'Ginocchio DX', mode: 'lines', line: { color: '#db2777', width: 1.5 } },
+    { x: [], y: [], name: 'Caviglia SX', mode: 'lines', line: { color: '#2563eb', width: 1.5 } },
+    { x: [], y: [], name: 'Caviglia DX', mode: 'lines', line: { color: '#059669', width: 1.5 } }
 ];
 const jointsLayout = {
     paper_bgcolor: chartColors.paper,
     plot_bgcolor: chartColors.plot,
     margin: { t: 20, b: 30, l: 40, r: 10 },
-    xaxis: { color: chartColors.axis, showgrid: false, zeroline: false },
+    xaxis: { type: 'date', color: chartColors.axis, showgrid: false, zeroline: false, tickformat: '%H:%M:%S' },
     yaxis: { color: chartColors.axis, gridcolor: chartColors.grid, zeroline: false },
     legend: { font: { color: chartColors.axis }, orientation: 'h', y: -0.2 }
 };
@@ -91,14 +78,14 @@ Plotly.newPlot(jointsPlotDiv, jointTraces, jointsLayout, { displayModeBar: false
 // Grafico latenza comando
 const latencyPlotDiv = document.getElementById('plot-latency');
 const latencyTraces = [
-    { x: timeData, y: latencyData, name: 'Latenza cmd', mode: 'lines', line: { color: '#1f5f99', width: 2 } },
-    { x: timeData, y: [], name: 'Target 50 ms', mode: 'lines', line: { color: '#b42318', width: 1, dash: 'dash' } }
+    { x: [], y: [], name: 'Latenza cmd', mode: 'lines', line: { color: '#1f5f99', width: 2 } },
+    { x: [], y: [], name: 'Target 50 ms', mode: 'lines', line: { color: '#b42318', width: 1, dash: 'dash' } }
 ];
 const latencyLayout = {
     paper_bgcolor: chartColors.paper,
     plot_bgcolor: chartColors.plot,
     margin: { t: 20, b: 30, l: 46, r: 10 },
-    xaxis: { color: chartColors.axis, showgrid: false, zeroline: false },
+    xaxis: { type: 'date', color: chartColors.axis, showgrid: false, zeroline: false, tickformat: '%H:%M:%S' },
     yaxis: { color: chartColors.axis, gridcolor: chartColors.grid, zeroline: false, title: 'ms' },
     legend: { font: { color: chartColors.axis }, orientation: 'h', y: -0.2 }
 };
@@ -182,51 +169,32 @@ socket.on('telemetry', (state) => {
         flightBadge.classList.add('hidden');
     }
 
-    // Aggiorna le serie dei grafici.
-    const timestampStr = new Date().toLocaleTimeString();
-    timeData.push(timestampStr);
-    imuData.x.push(state.imu.linear_acceleration.x);
-    imuData.y.push(state.imu.linear_acceleration.y);
-    imuData.z.push(state.imu.linear_acceleration.z);
-    latencyData.push(totalLatency);
-
-    // Estrae ginocchio e caviglia pitch: indici 3/4 a sinistra, 9/10 a destra.
-    const pos = state.joints.position;
-    if (pos && pos.length >= 12) {
-        jointData.left_knee.push(pos[3]);
-        jointData.right_knee.push(pos[9]);
-        jointData.left_ankle.push(pos[4]);
-        jointData.right_ankle.push(pos[10]);
-    } else {
-        jointData.left_knee.push(0);
-        jointData.right_knee.push(0);
-        jointData.left_ankle.push(0);
-        jointData.right_ankle.push(0);
-    }
-
-    // Finestra mobile sui campioni piu recenti.
-    if (timeData.length > maxDataPoints) {
-        timeData.shift();
-        imuData.x.shift();
-        imuData.y.shift();
-        imuData.z.shift();
-        jointData.left_knee.shift();
-        jointData.right_knee.shift();
-        jointData.left_ankle.shift();
-        jointData.right_ankle.shift();
-        latencyData.shift();
-    }
-
-    if (now - lastChartUpdateMs >= chartUpdateIntervalMs) {
-        lastChartUpdateMs = now;
-        updateCharts();
-    }
+    appendChartSample(now, state, totalLatency);
 });
 
-function updateCharts() {
-    Plotly.update(imuPlotDiv, { x: [timeData, timeData, timeData], y: [imuData.x, imuData.y, imuData.z] });
-    Plotly.update(jointsPlotDiv, { x: [timeData, timeData, timeData, timeData], y: [jointData.left_knee, jointData.right_knee, jointData.left_ankle, jointData.right_ankle] });
-    Plotly.update(latencyPlotDiv, { x: [timeData, timeData], y: [latencyData, latencyData.map(() => 50)] });
+function appendChartSample(now, state, totalLatency) {
+    const sampleTime = new Date(now);
+    const accel = state.imu.linear_acceleration;
+    const pos = state.joints.position || [];
+    const leftKnee = pos.length >= 12 ? pos[3] : 0;
+    const rightKnee = pos.length >= 12 ? pos[9] : 0;
+    const leftAnkle = pos.length >= 12 ? pos[4] : 0;
+    const rightAnkle = pos.length >= 12 ? pos[10] : 0;
+
+    Plotly.extendTraces(imuPlotDiv, {
+        x: [[sampleTime], [sampleTime], [sampleTime]],
+        y: [[accel.x], [accel.y], [accel.z]]
+    }, [0, 1, 2], maxDataPoints);
+
+    Plotly.extendTraces(jointsPlotDiv, {
+        x: [[sampleTime], [sampleTime], [sampleTime], [sampleTime]],
+        y: [[leftKnee], [rightKnee], [leftAnkle], [rightAnkle]]
+    }, [0, 1, 2, 3], maxDataPoints);
+
+    Plotly.extendTraces(latencyPlotDiv, {
+        x: [[sampleTime], [sampleTime]],
+        y: [[totalLatency], [50]]
+    }, [0, 1], maxDataPoints);
 }
 
 // Conversione quaternione -> Eulero in gradi.

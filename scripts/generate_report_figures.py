@@ -76,8 +76,8 @@ def configure_style() -> None:
 
 
 def add_header(fig: plt.Figure, title: str, subtitle: str) -> None:
-    fig.text(0.08, 0.955, title, fontsize=14, weight="bold", ha="left", va="top")
-    fig.text(0.08, 0.905, subtitle, fontsize=9.5, color=TOKENS["muted"], ha="left", va="top")
+    fig.text(0.08, 0.955, title, fontsize=13, weight="bold", ha="left", va="top")
+    fig.text(0.08, 0.908, subtitle, fontsize=9.2, color=TOKENS["muted"], ha="left", va="top")
 
 
 def save(fig: plt.Figure, name: str) -> None:
@@ -110,8 +110,8 @@ def draw_box(ax: plt.Axes, xy: tuple[float, float], width: float, height: float,
         linewidth=1.1,
     )
     ax.add_patch(patch)
-    ax.text(xy[0] + width / 2, xy[1] + height * 0.64, title, ha="center", va="center", fontsize=10.5, weight="bold")
-    ax.text(xy[0] + width / 2, xy[1] + height * 0.34, body, ha="center", va="center", fontsize=8.3, color=TOKENS["muted"])
+    ax.text(xy[0] + width / 2, xy[1] + height * 0.70, title, ha="center", va="center", fontsize=10.2, weight="bold")
+    ax.text(xy[0] + width / 2, xy[1] + height * 0.32, body, ha="center", va="center", fontsize=7.7, color=TOKENS["muted"], linespacing=1.05)
 
 
 def draw_arrow(ax: plt.Axes, start: tuple[float, float], end: tuple[float, float], label: str) -> None:
@@ -119,41 +119,73 @@ def draw_arrow(ax: plt.Axes, start: tuple[float, float], end: tuple[float, float
     ax.add_patch(arrow)
     mid_x = (start[0] + end[0]) / 2
     mid_y = (start[1] + end[1]) / 2
-    ax.text(mid_x, mid_y + 0.035, label, ha="center", va="center", fontsize=8.2, color=TOKENS["blue_dark"])
+    ax.text(
+        mid_x,
+        mid_y + 0.042,
+        label,
+        ha="center",
+        va="center",
+        fontsize=8.2,
+        color=TOKENS["blue_dark"],
+        bbox={"facecolor": TOKENS["surface"], "edgecolor": "none", "pad": 1.0},
+    )
+
+
+def draw_elbow_arrow(
+    ax: plt.Axes,
+    points: list[tuple[float, float]],
+    label: str,
+    label_xy: tuple[float, float] | None = None,
+) -> None:
+    for start, end in zip(points[:-2], points[1:-1]):
+        ax.plot([start[0], end[0]], [start[1], end[1]], color=TOKENS["blue_dark"], linewidth=1.15)
+    arrow = FancyArrowPatch(
+        points[-2],
+        points[-1],
+        arrowstyle="-|>",
+        mutation_scale=12,
+        linewidth=1.15,
+        color=TOKENS["blue_dark"],
+    )
+    ax.add_patch(arrow)
+    if label_xy is None:
+        label_xy = points[len(points) // 2]
+    ax.text(
+        label_xy[0],
+        label_xy[1],
+        label,
+        ha="center",
+        va="center",
+        fontsize=8.0,
+        color=TOKENS["blue_dark"],
+        bbox={"facecolor": TOKENS["surface"], "edgecolor": "none", "pad": 1.0},
+    )
 
 
 def figure_architecture() -> None:
-    fig, ax = plt.subplots(figsize=(9.8, 5.1))
+    fig, ax = plt.subplots(figsize=(10.2, 4.4))
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.axis("off")
     add_header(
         fig,
         "Architettura ROS 2 del prototipo",
-        "Flusso tra input utente, dashboard, simulazione MuJoCo, rosbag2 e replay_eval.",
+        "Componenti principali, topic ROS 2 e flusso di registrazione/replay.",
     )
 
-    draw_box(ax, (0.05, 0.56), 0.18, 0.16, "Input utente", "Tastiera / gamepad", TOKENS["gold_base"])
-    draw_box(ax, (0.32, 0.56), 0.22, 0.16, "web_teleop", "Flask-SocketIO\nDashboard realtime", TOKENS["blue_base"])
-    draw_box(ax, (0.68, 0.56), 0.24, 0.16, "mujoco_sim", "Unitree G1\nMuJoCo + policy", TOKENS["olive_base"])
-    draw_box(ax, (0.68, 0.24), 0.24, 0.14, "rosbag2", "Topic registrati\nper metriche", TOKENS["orange_base"])
-    draw_box(ax, (0.32, 0.24), 0.22, 0.14, "replay_eval", "Replay e MSE\ntraiettoria", TOKENS["pink_base"])
+    draw_box(ax, (0.05, 0.68), 0.18, 0.14, "Input utente", "Tastiera / gamepad", TOKENS["gold_base"])
+    draw_box(ax, (0.31, 0.68), 0.21, 0.14, "web_teleop", "Flask-SocketIO\nDashboard", TOKENS["blue_base"])
+    draw_box(ax, (0.70, 0.68), 0.23, 0.14, "mujoco_sim", "Unitree G1\nMuJoCo + policy", TOKENS["olive_base"])
+    draw_box(ax, (0.62, 0.42), 0.31, 0.14, "Topic ROS 2", "/imu, /joint_states, /odom\n/contacts/*, /fall_detected, /metrics/*", "#FFFFFF")
+    draw_box(ax, (0.62, 0.20), 0.31, 0.13, "rosbag2", "Registrazione topic\nper analisi metriche", TOKENS["orange_base"])
+    draw_box(ax, (0.31, 0.20), 0.21, 0.13, "replay_eval", "Replay deterministico\nMSE traiettoria", TOKENS["pink_base"])
 
-    draw_arrow(ax, (0.23, 0.64), (0.32, 0.64), "eventi input")
-    draw_arrow(ax, (0.54, 0.64), (0.68, 0.64), "/cmd_vel")
-    draw_arrow(ax, (0.68, 0.59), (0.54, 0.59), "telemetria")
-    draw_arrow(ax, (0.80, 0.56), (0.80, 0.38), "topic")
-    draw_arrow(ax, (0.68, 0.31), (0.54, 0.31), "bag")
-
-    ax.text(
-        0.50,
-        0.48,
-        "/imu  /joint_states  /odom  /contacts/*  /fall_detected  /metrics/cmd_latency_ms",
-        ha="center",
-        va="center",
-        fontsize=8.5,
-        color=TOKENS["muted"],
-    )
+    draw_arrow(ax, (0.23, 0.75), (0.31, 0.75), "eventi input")
+    draw_arrow(ax, (0.52, 0.762), (0.70, 0.762), "/cmd_vel")
+    draw_elbow_arrow(ax, [(0.70, 0.718), (0.58, 0.718), (0.52, 0.718)], "stato dashboard", (0.61, 0.743))
+    draw_elbow_arrow(ax, [(0.815, 0.68), (0.815, 0.58)], "pubblica", (0.865, 0.63))
+    draw_elbow_arrow(ax, [(0.775, 0.42), (0.775, 0.33)], "registra", (0.84, 0.38))
+    draw_elbow_arrow(ax, [(0.62, 0.265), (0.52, 0.265)], "bag", (0.57, 0.295))
     save(fig, "architettura_ros2")
 
 
@@ -161,21 +193,21 @@ def figure_latency(flat: dict, obstacle: dict) -> None:
     fig, ax = plt.subplots(figsize=(8.8, 4.8))
     add_header(
         fig,
-        "Latenza comando sotto target salvo picco obstacle",
-        "Media e p95 restano sotto 50 ms; il massimo nello scenario obstacle e un outlier isolato.",
+        "Media e p95 della latenza restano sotto target",
+        "Il massimo obstacle e trattato a parte come picco isolato: 466.55 ms.",
     )
     fig.subplots_adjust(top=0.78, left=0.10, right=0.97, bottom=0.16)
 
-    labels = ["Media", "P95", "Massimo"]
+    labels = ["Media", "P95"]
     x = range(len(labels))
     width = 0.34
-    flat_values = [flat["latency_ms_avg"], flat["latency_ms_p95"], flat["latency_ms_max"]]
-    obs_values = [obstacle["latency_ms_avg"], obstacle["latency_ms_p95"], obstacle["latency_ms_max"]]
+    flat_values = [flat["latency_ms_avg"], flat["latency_ms_p95"]]
+    obs_values = [obstacle["latency_ms_avg"], obstacle["latency_ms_p95"]]
 
     ax.bar([i - width / 2 for i in x], flat_values, width, label="flat", color=TOKENS["blue_base"], edgecolor=TOKENS["blue_dark"])
     ax.bar([i + width / 2 for i in x], obs_values, width, label="obstacle_course", color=TOKENS["orange_base"], edgecolor=TOKENS["orange_mid"])
     ax.axhline(50, color=TOKENS["ink"], linestyle="--", linewidth=1.1)
-    ax.text(2.43, 50, "target 50 ms", va="bottom", ha="right", fontsize=8.5, color=TOKENS["ink"])
+    ax.text(1.46, 50, "target 50 ms", va="bottom", ha="right", fontsize=8.5, color=TOKENS["ink"])
 
     for i, value in enumerate(flat_values):
         ax.text(i - width / 2, value + 8, f"{value:.1f}", ha="center", va="bottom", fontsize=8.2)
@@ -184,8 +216,17 @@ def figure_latency(flat: dict, obstacle: dict) -> None:
 
     ax.set_ylabel("Latenza comando (ms)")
     ax.set_xticks(list(x), labels)
-    ax.set_ylim(0, max(obs_values) * 1.18)
+    ax.set_ylim(0, 60)
     ax.legend(loc="upper left", frameon=False, ncols=2)
+    ax.text(
+        1.48,
+        56,
+        f"max obstacle: {obstacle['latency_ms_max']:.1f} ms",
+        ha="right",
+        va="top",
+        fontsize=8.5,
+        color=TOKENS["muted"],
+    )
     clean_axes(ax)
     save(fig, "latenza_comandi")
 

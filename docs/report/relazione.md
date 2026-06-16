@@ -131,7 +131,7 @@ versionare file binari o log voluminosi.
 | `flat` | Latenza comando media/p95/max | < 50 ms | 7.53 / 23.45 / 28.35 ms | OK |
 | `flat` | MSE replay | < 1e-4 m^2 | 0.00000000 m^2 | OK |
 | `flat` | Stabilita assetto | nessuna caduta | roll 6.09 deg, pitch 6.53 deg, 0 cadute | OK |
-| `obstacle_course` | Frequenza telemetria media | >= 30 Hz | 32.93 Hz | OK |
+| `obstacle_course` | Frequenza telemetria media/minima | >= 30 Hz medio | 32.93 Hz / 3 Hz | OK medio, transitorio |
 | `obstacle_course` | Latenza comando media/p95 | < 50 ms | 9.57 / 26.35 ms | OK |
 | `obstacle_course` | Fall detection | >= 1 evento | 4 eventi | OK |
 | `obstacle_course` | Flight phase | >= 1 evento | 79 eventi | OK |
@@ -142,16 +142,24 @@ target e una latenza di comando ampiamente inferiore a 50 ms. Il replay determin
 ha prodotto un MSE pari a 0.00000000 m^2, indicando corrispondenza tra traiettoria
 registrata e traiettoria riprodotta nel dominio di test scelto.
 
+![Traiettoria flat per replay](figures/traiettoria_flat.png)
+
+*Figura 3 - Traiettoria XY sul piano usata per la verifica di replay deterministico:
+la prova fornisce un riferimento stabile per confrontare la traiettoria registrata
+con quella riprodotta.*
+
 ![Eventi nello scenario obstacle](figures/eventi_obstacle.png)
 
-*Figura 3 - Conteggio degli eventi critici nello scenario `obstacle_course`: il
+*Figura 4 - Conteggio degli eventi critici nello scenario `obstacle_course`: il
 test sollecita fall detection, flight phase e perdite di contatto dei piedi.*
 
 Nello scenario `obstacle_course` la dashboard ha rilevato eventi di contatto, flight
-phase e caduta. La latenza media e il p95 restano sotto il target. Il valore massimo
-di latenza osservato in una prova obstacle raggiunge 466.55 ms, ma viene interpretato
-come picco isolato: non rappresenta il comportamento tipico del sistema, perche media
-e p95 rimangono entro i limiti previsti.
+phase e caduta. La latenza media e il p95 restano sotto il target. La frequenza
+telemetrica media resta sopra 30 Hz, ma il minimo transitorio a 3 Hz segnala un
+breve rallentamento durante la prova a ostacoli. Il valore massimo di latenza
+osservato in una prova obstacle raggiunge 466.55 ms, ma viene interpretato come
+picco isolato: non rappresenta il comportamento tipico del sistema, perche media e
+p95 rimangono entro i limiti previsti.
 
 Nel grafico di assetto e quota i segmenti temporali sono rappresentati in sequenza
 relativa, poiche durante la prova obstacle sono presenti reset della simulazione e
@@ -160,7 +168,7 @@ discontinuita nel log. Questa scelta evita di sovrapporre campioni con lo stesso
 
 ![Assetto e quota nello scenario obstacle](figures/assetto_quota_obstacle.png)
 
-*Figura 4 - Serie temporali di roll, pitch e quota base nello scenario a ostacoli.
+*Figura 5 - Serie temporali di roll, pitch e quota base nello scenario a ostacoli.
 I segmenti sono mostrati in ordine di registrazione e separati nei punti di reset o
 discontinuita; il superamento della soglia di 35 deg e il calo della quota supportano
 il rilevamento degli eventi di caduta.*
@@ -182,15 +190,18 @@ Restano alcuni limiti. Il progetto e interamente simulativo: non e stata affront
 la validazione su hardware reale. La velocita comandata non e stata calibrata in
 modo automatico rispetto alla velocita effettiva del robot, e l'odometria non e stata
 confrontata in modo sistematico con il ground truth interno di MuJoCo. Inoltre, nello
-scenario a ostacoli sono possibili picchi occasionali di latenza, soprattutto durante
-fasi di registrazione e visualizzazione piu intense.
+scenario a ostacoli sono possibili picchi occasionali di latenza e brevi cali di
+frequenza telemetrica, soprattutto durante fasi di registrazione e visualizzazione
+piu intense.
 
 ## 7. Conclusioni e sviluppi futuri
 
 Il lavoro realizzato dimostra una pipeline completa per teleoperare Unitree G1 in
 simulazione, osservare la telemetria in tempo reale e validare quantitativamente le
-sessioni sperimentali. I target principali di frequenza, latenza, replay e rilevamento
-degli eventi critici risultano soddisfatti nei test selezionati.
+sessioni sperimentali. I target principali di latenza, replay e rilevamento degli
+eventi critici risultano soddisfatti nei test selezionati; la frequenza telemetrica
+risulta sopra target come valore medio, con un transitorio minimo nello scenario a
+ostacoli da considerare in ulteriori ottimizzazioni.
 
 Sviluppi futuri naturali includono una calibrazione automatica della velocita,
 un confronto tra odometria e ground truth MuJoCo, l'analisi del drift laterale su

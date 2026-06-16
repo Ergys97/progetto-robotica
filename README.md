@@ -6,31 +6,37 @@ record/replay deterministico con valutazione MSE.
 
 ## Requisiti
 - Windows 11 + WSL2 Ubuntu 24.04 (o Ubuntu 24.04 nativo)
-- ROS 2 Jazzy
+- ROS 2 Jazzy installato o repository apt di ROS 2 Jazzy gia configurato
 - Python 3.12, venv con `--system-site-packages`
 - [unitree_rl_gym](https://github.com/unitreerobotics/unitree_rl_gym) clonato (policy pre-addestrata G1)
 
 ## Setup
 ```bash
-sudo apt install ros-jazzy-desktop ros-jazzy-rosbag2-storage-mcap
+# 0. Installa i pacchetti di sistema
+sudo apt update
+sudo apt install -y git python3-venv python3-pip python3-colcon-common-extensions \
+  ros-jazzy-desktop ros-jazzy-rosbag2-storage-mcap
+
+# 1. Clona la policy pre-addestrata Unitree G1
 git clone https://github.com/unitreerobotics/unitree_rl_gym ~/unitree_rl_gym
 export UNITREE_RL_GYM_PATH=~/unitree_rl_gym   # opzionale, default ~/unitree_rl_gym
 
-# 1. Crea ed installa le dipendenze nell'ambiente virtuale
+# 2. Configura il workspace ROS 2
+mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
+git clone https://github.com/Ergys97/progetto-robotica.git
+cd ~/ros2_ws/src/progetto-robotica
+
+# 3. Crea ed installa le dipendenze Python nell'ambiente virtuale
 python3 -m venv --system-site-packages ~/venv
 ~/venv/bin/pip install -r requirements.txt
 
-# 2. Configura il workspace ROS 2
-mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
-git clone <questo-repo>
-
-# 3. Compila il workspace usando l'interprete dell'ambiente virtuale per generare le shebang corrette
+# 4. Compila il workspace usando l'interprete dell'ambiente virtuale per generare le shebang corrette
 source ~/venv/bin/activate
 source /opt/ros/jazzy/setup.bash
 cd ~/ros2_ws
 python3 -m colcon build
 ```
-*(Nota: in questo ambiente e consigliato il build standard sopra descritto. Alcune versioni di `setuptools` non supportano correttamente l'installazione editable usata da `colcon build --symlink-install`.)*
+*(Nota: in questo ambiente e consigliato il build standard sopra descritto. Usare `python3 -m colcon build`, dopo aver attivato `~/venv`, assicura che gli entry point ROS usino l'interprete del virtualenv. Alcune versioni di `setuptools` non supportano correttamente l'installazione editable usata da `colcon build --symlink-install`.)*
 
 ## Esecuzione
 Comandi consigliati da WSL, dal root del repository:
@@ -71,9 +77,13 @@ ros2 launch progetto_robotica teleop_sim_launch.py headless:=True scenario:=flat
 Dashboard accessibile all'indirizzo: http://localhost:5000
 - Comandi di movimento: tasti WASD/QE (o gamepad USB), pulsante Stop (Spazio)
 - Gestione sessione: Start/Stop Record, Reset Sim.
+- Grafici realtime: Plotly streaming (`extendTraces`) su IMU, giunti e latenza.
 - Export metriche: al termine della registrazione il riassunto viene salvato in
   `~/progetto_robotica_bags/metrics/`; i pulsanti Scarica JSON/CSV restano disponibili
   per il download manuale.
+
+Dopo modifiche a dashboard o asset web, rilanciare con `bash scripts/run_demo.sh flat --build`
+e forzare il refresh del browser con `Ctrl+Shift+R`.
 
 ## Scenari di prova
 - `flat`: piano regolare, usato per calibrazione comandi, telemetria e replay MSE.
@@ -113,4 +123,3 @@ Esecuzione degli unit test (senza dipendenze ROS):
 - `docs/results/`: risultati sperimentali selezionati per la relazione (`flat` e `obstacle_course`).
 - `docs/report/`: destinazione della relazione finale.
 - `docs/troubleshooting/`: note operative non essenziali al runtime.
-- `docs/archive/`: appunti di sviluppo e piani storici non necessari alla consegna.

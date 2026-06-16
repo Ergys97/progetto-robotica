@@ -54,7 +54,7 @@ class FrontendStaticTest(unittest.TestCase):
 
         self.assertIn('id="plot-latency"', html)
         self.assertIn("Latenza comando nel tempo", html)
-        self.assertIn("latencyData", js)
+        self.assertIn("latencyTraces", js)
         self.assertIn("latencyPlotDiv", js)
 
     def test_fall_alarm_is_non_blocking(self):
@@ -72,11 +72,38 @@ class FrontendStaticTest(unittest.TestCase):
     def test_plotly_charts_are_throttled(self):
         js = read_text("web/static/js/dashboard.js")
 
-        self.assertIn("const chartUpdateIntervalMs = 200", js)
-        self.assertIn("let lastChartUpdateMs = 0", js)
-        self.assertIn("function updateCharts()", js)
-        self.assertIn("if (now - lastChartUpdateMs >= chartUpdateIntervalMs)", js)
-        self.assertIn("updateCharts();", js)
+        self.assertIn("const maxDataPoints = 150", js)
+        self.assertIn("function appendChartSample", js)
+        self.assertIn("Plotly.extendTraces", js)
+        self.assertIn("maxDataPoints", js)
+        self.assertNotIn("function updateCharts()", js)
+        self.assertNotIn("Plotly.update", js)
+
+    def test_dashboard_static_assets_are_cache_busted(self):
+        html = read_text("web/templates/index.html")
+        web_node = read_text("progetto_robotica/web_teleop.py")
+
+        self.assertIn("url_for('static', filename='js/dashboard.js')", html)
+        self.assertIn("?v=realtime-charts", html)
+        self.assertIn("SEND_FILE_MAX_AGE_DEFAULT", web_node)
+        self.assertIn("0", web_node)
+
+    def test_realtime_charts_use_unique_date_samples(self):
+        js = read_text("web/static/js/dashboard.js")
+
+        self.assertIn("const sampleTime = new Date(now)", js)
+        self.assertNotIn("toLocaleTimeString()", js)
+        self.assertIn("xaxis: { type: 'date'", js)
+
+    def test_realtime_charts_stream_each_sample_to_expected_traces(self):
+        js = read_text("web/static/js/dashboard.js")
+
+        self.assertIn("Plotly.extendTraces(imuPlotDiv", js)
+        self.assertIn("[0, 1, 2]", js)
+        self.assertIn("Plotly.extendTraces(jointsPlotDiv", js)
+        self.assertIn("[0, 1, 2, 3]", js)
+        self.assertIn("Plotly.extendTraces(latencyPlotDiv", js)
+        self.assertIn("[0, 1]", js)
 
     def test_web_status_exposes_scenario(self):
         launch = read_text("launch/teleop_sim_launch.py")

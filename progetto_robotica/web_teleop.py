@@ -29,6 +29,7 @@ app = Flask(
     template_folder=os.path.join(_share, 'web', 'templates'),
     static_folder=os.path.join(_share, 'web', 'static'),
 )
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Shared telemetry state

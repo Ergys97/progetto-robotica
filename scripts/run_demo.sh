@@ -146,7 +146,7 @@ safe_source "$ros_setup"
 if [[ "$build_first" == "True" ]]; then
     echo "Compilo ${PACKAGE_NAME} in ${ROS_WS}..."
     cd "$ROS_WS"
-    colcon build --packages-select progetto_robotica
+    python3 -m colcon build --packages-select progetto_robotica
 fi
 
 if [[ ! -f "$install_setup" ]]; then

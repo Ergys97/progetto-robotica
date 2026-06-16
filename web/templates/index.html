@@ -184,6 +184,6 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-    <script src="/static/js/dashboard.js"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}?v=realtime-charts"></script>
 </body>
 </html>
