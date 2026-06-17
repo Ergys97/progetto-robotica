@@ -13,15 +13,15 @@ pubblicazione dei topic di telemetria, rilevamento di condizioni critiche e
 registrazione delle sessioni tramite rosbag2. La validazione su piano regolare
 mostra frequenza telemetrica media pari a 33.51 Hz, latenza comando p95 pari a
 23.45 ms e replay deterministico con MSE nullo nella prova selezionata. Lo scenario
-a ostacoli conferma la reattivita degli alert, con 4 eventi di caduta, 79 flight
+a ostacoli conferma la reattività degli alert, con 4 eventi di caduta, 79 flight
 phase e variazioni coerenti dei contatti ai piedi.
 
 ## 1. Obiettivo del progetto
 
 Il progetto sviluppa un prototipo software per la teleoperazione del robot umanoide
-Unitree G1 in ambiente simulato MuJoCo. L'obiettivo non e solo avviare una
+Unitree G1 in ambiente simulato MuJoCo. L'obiettivo non è solo avviare una
 simulazione, ma costruire una piccola architettura robotica integrata, osservabile
-e misurabile: il robot viene controllato tramite comandi di velocita, la telemetria
+e misurabile: il robot viene controllato tramite comandi di velocità, la telemetria
 viene pubblicata su topic ROS 2 e una dashboard web permette di monitorare in tempo
 reale lo stato del sistema.
 
@@ -32,19 +32,19 @@ Il sistema realizzato copre quattro funzionalita principali:
 - dashboard realtime per IMU, giunti, odometria, contatti dei piedi e alert;
 - registrazione, replay e valutazione quantitativa delle sessioni sperimentali.
 
-La validazione e stata condotta su due scenari: un piano regolare, usato per
-misurare stabilita, latenza e fedelta del replay, e un percorso con ostacoli
+La validazione è stata condotta su due scenari: un piano regolare, usato per
+misurare stabilità, latenza e fedeltà del replay, e un percorso con ostacoli
 elementari, usato per sollecitare contatti, flight phase e rilevamento caduta.
 
 ## 2. Architettura del sistema
 
-L'architettura e basata su ROS 2 Jazzy e separa la simulazione, l'interfaccia utente
+L'architettura è basata su ROS 2 Jazzy e separa la simulazione, l'interfaccia utente
 e l'analisi sperimentale in componenti distinti. Questa separazione rende il sistema
-piu leggibile, permette di registrare i dati con rosbag2 e consente di sostituire o
+più leggibile, permette di registrare i dati con rosbag2 e consente di sostituire o
 estendere singoli moduli senza modificare l'intera applicazione.
 
 Il nodo `mujoco_sim` gestisce il modello MuJoCo, applica la policy di locomozione
-del robot, riceve i comandi di velocita e pubblica la telemetria. Il nodo
+del robot, riceve i comandi di velocità e pubblica la telemetria. Il nodo
 `web_teleop` integra il server Flask-SocketIO, la dashboard web e la lettura degli
 input da tastiera o gamepad. Il nodo `replay_eval` riproduce una sessione registrata
 e confronta la traiettoria ottenuta con quella acquisita durante la teleoperazione
@@ -54,13 +54,13 @@ live.
 
 *Figura 1 - Architettura logica del sistema: `web_teleop` gestisce input e
 dashboard, `mujoco_sim` esegue la simulazione e pubblica la telemetria, rosbag2
-registra i topic e `replay_eval` valuta la fedelta del replay.*
+registra i topic e `replay_eval` valuta la fedeltà del replay.*
 
 I topic principali sono:
 
 | Topic | Ruolo |
 | --- | --- |
-| `/cmd_vel` | Comando di velocita lineare e angolare verso il simulatore |
+| `/cmd_vel` | Comando di velocità lineare e angolare verso il simulatore |
 | `/imu` | Orientamento e stato inerziale del robot |
 | `/joint_states` | Stato dei giunti del modello |
 | `/odom` | Traiettoria stimata del robot |
@@ -80,12 +80,12 @@ Sono stati definiti due scenari di prova per separare la verifica del comportame
 nominale dalla verifica degli stati critici.
 
 Lo scenario `flat` rappresenta un piano regolare. E stato usato per misurare la
-frequenza di aggiornamento della telemetria, la latenza dei comandi e la fedelta
+frequenza di aggiornamento della telemetria, la latenza dei comandi e la fedeltà
 del replay. In questo caso il robot opera in condizioni controllate e la traiettoria
-e adatta a una valutazione deterministica.
+è adatta a una valutazione deterministica.
 
 Lo scenario `obstacle_course` introduce una rampa bassa e piccoli step progressivi.
-Questo scenario e stato usato per verificare la reattivita della dashboard rispetto
+Questo scenario è stato usato per verificare la reattività della dashboard rispetto
 ai contatti dei piedi, alla perdita simultanea di contatto e al rilevamento di
 caduta. La scena viene generata a runtime tramite un modulo Python dedicato, evitando
 di mantenere manualmente file XML MuJoCo duplicati.
@@ -97,8 +97,8 @@ di telemetria, logging CSV e refresh del viewer.
 
 ## 4. Metriche di valutazione
 
-Le metriche sono state scelte per coprire sia la reattivita del sistema sia la
-qualita della validazione sperimentale.
+Le metriche sono state scelte per coprire sia la reattività del sistema sia la
+qualità della validazione sperimentale.
 
 | Metrica | Target | Motivazione |
 | --- | --- | --- |
@@ -109,15 +109,15 @@ qualita della validazione sperimentale.
 | Flight phase | almeno un evento nello scenario obstacle | Verifica perdita simultanea contatti |
 | Contatti piedi | variazioni coerenti con ostacoli | Validazione del rilevamento contatto |
 
-Il replay e stato valutato sullo scenario `flat`, poiche il piano regolare consente
-un confronto piu stabile tra traiettoria live e traiettoria riprodotta. Lo scenario
-`obstacle_course` e stato invece usato per validare gli alert, dove la priorita e
+Il replay è stato valutato sullo scenario `flat`, poiché il piano regolare consente
+un confronto più stabile tra traiettoria live e traiettoria riprodotta. Lo scenario
+`obstacle_course` è stato invece usato per validare gli alert, dove la priorità è
 osservare il corretto rilevamento degli eventi critici.
 
 ![Latenza comando](figures/latenza_comandi.png)
 
 *Figura 2 - Confronto della latenza comando nei due scenari. Media e p95 restano
-sotto il target di 50 ms; il massimo obstacle e trattato come picco isolato.*
+sotto il target di 50 ms; il massimo obstacle è trattato come picco isolato.*
 
 ## 5. Risultati sperimentali
 
@@ -158,19 +158,19 @@ phase e caduta. La latenza media e il p95 restano sotto il target. La frequenza
 telemetrica media resta sopra 30 Hz, ma il minimo transitorio a 3 Hz segnala un
 breve rallentamento durante la prova a ostacoli. Il valore massimo di latenza
 osservato in una prova obstacle raggiunge 466.55 ms, ma viene interpretato come
-picco isolato: non rappresenta il comportamento tipico del sistema, perche media e
+picco isolato: non rappresenta il comportamento tipico del sistema, perché media e
 p95 rimangono entro i limiti previsti.
 
 Nel grafico di assetto e quota i segmenti temporali sono rappresentati in sequenza
-relativa, poiche durante la prova obstacle sono presenti reset della simulazione e
-discontinuita nel log. Questa scelta evita di sovrapporre campioni con lo stesso
+relativa, poiché durante la prova obstacle sono presenti reset della simulazione e
+discontinuità nel log. Questa scelta evita di sovrapporre campioni con lo stesso
 `sim_time` e rende il grafico interpretabile come sequenza di eventi registrati.
 
 ![Assetto e quota nello scenario obstacle](figures/assetto_quota_obstacle.png)
 
 *Figura 5 - Serie temporali di roll, pitch e quota base nello scenario a ostacoli.
 I segmenti sono mostrati in ordine di registrazione e separati nei punti di reset o
-discontinuita; il superamento della soglia di 35 deg e il calo della quota supportano
+discontinuità; il superamento della soglia di 35 deg e il calo della quota supportano
 il rilevamento degli eventi di caduta.*
 
 ## 6. Analisi critica
@@ -180,19 +180,19 @@ MuJoCo, middleware ROS 2, teleoperazione, dashboard web e strumenti di registraz
 e replay. La presenza di metriche quantitative consente di valutare il progetto non
 solo come demo visuale, ma come sistema sperimentale riproducibile.
 
-La scelta di separare gli scenari di prova e risultata utile. Lo scenario `flat`
+La scelta di separare gli scenari di prova è risultata utile. Lo scenario `flat`
 offre condizioni adatte alla misura di latenza, frequenza e replay; lo scenario
 `obstacle_course` introduce invece condizioni meno regolari, utili per validare gli
 alert e osservare stati critici. Questa distinzione riduce il rischio di attribuire
 a un singolo test obiettivi sperimentali troppo diversi.
 
-Restano alcuni limiti. Il progetto e interamente simulativo: non e stata affrontata
-la validazione su hardware reale. La velocita comandata non e stata calibrata in
-modo automatico rispetto alla velocita effettiva del robot, e l'odometria non e stata
+Restano alcuni limiti. Il progetto è interamente simulativo: non è stata affrontata
+la validazione su hardware reale. La velocità comandata non è stata calibrata in
+modo automatico rispetto alla velocità effettiva del robot, e l'odometria non è stata
 confrontata in modo sistematico con il ground truth interno di MuJoCo. Inoltre, nello
 scenario a ostacoli sono possibili picchi occasionali di latenza e brevi cali di
 frequenza telemetrica, soprattutto durante fasi di registrazione e visualizzazione
-piu intense.
+più intense.
 
 ## 7. Conclusioni e sviluppi futuri
 
@@ -203,7 +203,7 @@ eventi critici risultano soddisfatti nei test selezionati; la frequenza telemetr
 risulta sopra target come valore medio, con un transitorio minimo nello scenario a
 ostacoli da considerare in ulteriori ottimizzazioni.
 
-Sviluppi futuri naturali includono una calibrazione automatica della velocita,
+Sviluppi futuri naturali includono una calibrazione automatica della velocità,
 un confronto tra odometria e ground truth MuJoCo, l'analisi del drift laterale su
-cammini piu lunghi e, in prospettiva, l'adattamento dell'architettura a un robot
+cammini più lunghi e, in prospettiva, l'adattamento dell'architettura a un robot
 fisico o a un simulatore distribuito.

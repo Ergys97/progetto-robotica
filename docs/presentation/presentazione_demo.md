@@ -6,7 +6,7 @@
 
 ## Obiettivo della presentazione
 
-L'obiettivo e mostrare che il progetto non e solo una simulazione avviata in MuJoCo,
+L'obiettivo è mostrare che il progetto non è solo una simulazione avviata in MuJoCo,
 ma una piccola architettura robotica completa:
 
 - controllo del robot tramite teleoperazione;
@@ -29,8 +29,8 @@ Messaggio principale da far passare:
 Punti da dire:
 
 - Il progetto segue la Traccia 10: teleoperazione e dashboard web per Unitree G1.
-- L'ambiente scelto e MuJoCo, con ROS 2 Jazzy come middleware.
-- Il focus non e solo il movimento del robot, ma anche osservabilita, logging e
+- L'ambiente scelto è MuJoCo, con ROS 2 Jazzy come middleware.
+- Il focus non è solo il movimento del robot, ma anche osservabilità, logging e
   validazione sperimentale.
 
 Frase utile:
@@ -53,7 +53,7 @@ Componenti da spiegare:
     `/metrics/cmd_latency_ms`.
 - `web_teleop`
   - legge input tastiera/gamepad;
-  - pubblica comandi di velocita;
+  - pubblica comandi di velocità;
   - serve la dashboard Flask-SocketIO;
   - invia dati realtime al browser.
 - `replay_eval`
@@ -66,23 +66,23 @@ Componenti da spiegare:
 
 Frase utile:
 
-> Ho separato il sistema in nodi con responsabilita distinte: simulazione, interfaccia
-> web e valutazione sperimentale. Questo rende piu semplice controllare, registrare
+> Ho separato il sistema in nodi con responsabilità distinte: simulazione, interfaccia
+> web e valutazione sperimentale. Questo rende più semplice controllare, registrare
 > e validare il comportamento del robot.
 
 ### 3. Dashboard e teleoperazione - 2 minuti
 
 Punti da dire:
 
-- La dashboard e accessibile da browser su `http://localhost:5000`.
+- La dashboard è accessibile da browser su `http://localhost:5000`.
 - Visualizza telemetria, assetto, contatti dei piedi, stato caduta e latenza.
 - I comandi arrivano da tastiera o gamepad.
 - Il sistema include reset simulazione e gestione record.
 
 Frase utile:
 
-> La dashboard serve come strumento di controllo e osservabilita: durante la demo
-> posso vedere se il robot e stabile, se perde contatto con il terreno e se la
+> La dashboard serve come strumento di controllo e osservabilità: durante la demo
+> posso vedere se il robot è stabile, se perde contatto con il terreno e se la
 > latenza dei comandi resta entro il target.
 
 ### 4. Scenari sperimentali - 2 minuti
@@ -92,16 +92,16 @@ Scenari:
 - `flat`
   - piano regolare;
   - usato per telemetria, latenza e replay;
-  - scenario piu adatto alla misura deterministica.
+  - scenario più adatto alla misura deterministica.
 - `obstacle_course`
   - rampa e piccoli step;
   - usato per contatti piedi, flight phase e fall detection;
-  - scenario piu adatto a stressare gli alert.
+  - scenario più adatto a stressare gli alert.
 
 Frase utile:
 
 > Ho separato gli scenari per evitare di usare un singolo test per obiettivi troppo
-> diversi: il piano regolare misura la stabilita del sistema, mentre gli ostacoli
+> diversi: il piano regolare misura la stabilità del sistema, mentre gli ostacoli
 > servono a verificare gli alert.
 
 ### 5. Metriche e risultati - 4 minuti
@@ -129,13 +129,26 @@ Punto da chiarire sulla latenza:
 
 Punto da chiarire sul replay:
 
-> Ho validato il replay sullo scenario flat perche e il dominio piu controllato:
+> Ho validato il replay sullo scenario flat perché è il dominio più controllato:
 > permette di confrontare traiettoria live e traiettoria riprodotta senza introdurre
-> cadute, reset e discontinuita tipiche dello scenario obstacle.
+> cadute, reset e discontinuità tipiche dello scenario obstacle.
+
+Perché l'MSE è esattamente 0 (domanda probabile):
+
+> L'MSE risulta esattamente zero perché la sessione registra, oltre alla traiettoria,
+> lo stato iniziale (qpos/qvel post-reset) e i target di controllo PD applicati a ogni
+> passo (colonne `target_` nel CSV). In replay questi target vengono rialimentati nella
+> stessa fisica MuJoCo, che è deterministica: a parità di stato iniziale e di sequenza
+> di controlli la traiettoria coincide bit a bit. Quindi lo zero non è un caso fortunato,
+> ma la conferma che la pipeline di registrazione e riproduzione è fedele e che la
+> simulazione è riproducibile. Esiste anche un percorso che ricalcola la policy dalle
+> osservazioni (MSE non nullo, più sensibile al rumore numerico): l'ho lasciato come
+> estensione, ma per la metrica di fedeltà richiesta dalla traccia il replay dei target
+> è il confronto corretto.
 
 Punto da chiarire sul grafico assetto/quota:
 
-> Il grafico obstacle e a segmenti perche il log contiene reset e discontinuita.
+> Il grafico obstacle è a segmenti perché il log contiene reset e discontinuità.
 > I segmenti sono mostrati in sequenza relativa per evitare di sovrapporre campioni
 > con lo stesso `sim_time`.
 
@@ -145,7 +158,7 @@ Limiti:
 
 - validazione solo in simulazione;
 - nessun test su hardware reale;
-- velocita comandata non calibrata automaticamente rispetto alla velocita effettiva;
+- velocità comandata non calibrata automaticamente rispetto alla velocità effettiva;
 - odometria non confrontata sistematicamente con ground truth MuJoCo.
 
 Sviluppi futuri:
@@ -175,7 +188,7 @@ Mostrare rapidamente:
 
 ### Preparazione prima dell'esame
 
-Aprire gia due terminali:
+Aprire già due terminali:
 
 - terminale 1: root del repository;
 - terminale 2: eventuale comandi di controllo ROS o replay.
@@ -241,7 +254,7 @@ docs/results/flat/
 docs/results/obstacle/
 ```
 
-#### Minuto 3:30-4:30 - Scenario obstacle oppure risultati gia pronti
+#### Minuto 3:30-4:30 - Scenario obstacle oppure risultati già pronti
 
 Se il tempo e l'ambiente grafico sono stabili:
 
@@ -278,12 +291,12 @@ Se MuJoCo o la grafica WSL danno problemi, usare questa sequenza:
 2. mostrare `docs/report/relazione_finale.pdf`;
 3. mostrare i grafici in `docs/report/figures/`;
 4. mostrare i risultati JSON/CSV in `docs/results/`;
-5. spiegare che i test automatici passano con `30 passed`.
+5. spiegare che i test automatici passano con `40 passed`.
 
 Frase pronta:
 
 > In caso di problemi grafici dell'ambiente, il progetto resta riproducibile dai
-> comandi documentati e i risultati sperimentali selezionati sono gia salvati nel
+> comandi documentati e i risultati sperimentali selezionati sono già salvati nel
 > repository.
 
 ## File e cartelle da consegnare al professore
@@ -367,7 +380,7 @@ Se il professore chiede anche i rosbag grezzi, creare un archivio separato con:
 ~/progetto_robotica_bags/metrics/bag_20260615_164534_metrics.csv
 ```
 
-Per la consegna standard, pero, bastano i risultati leggeri gia inclusi in
+Per la consegna standard, però, bastano i risultati leggeri già inclusi in
 `docs/results/`.
 
 ## Checklist finale prima di inviare

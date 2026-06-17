@@ -149,16 +149,16 @@ def build() -> None:
             "registrazione delle sessioni tramite rosbag2. La validazione su piano regolare mostra "
             "frequenza telemetrica media pari a 33.51 Hz, latenza comando p95 pari a 23.45 ms e "
             "replay deterministico con MSE nullo nella prova selezionata. Lo scenario a ostacoli "
-            "conferma la reattivita degli alert, con 4 eventi di caduta, 79 flight phase e variazioni "
+            "conferma la reattività degli alert, con 4 eventi di caduta, 79 flight phase e variazioni "
             "coerenti dei contatti ai piedi.",
         )
         y = add_heading(ax, y - 0.12, "Obiettivo", size=14)
         y = add_paragraph(
             ax,
             y,
-            "L'obiettivo non e solo avviare una simulazione, ma costruire una architettura robotica "
+            "L'obiettivo non è solo avviare una simulazione, ma costruire una architettura robotica "
             "integrata, osservabile e misurabile: il robot viene controllato tramite comandi di "
-            "velocita, la telemetria viene pubblicata su topic ROS 2 e una dashboard web permette "
+            "velocità, la telemetria viene pubblicata su topic ROS 2 e una dashboard web permette "
             "di monitorare in tempo reale lo stato del sistema.",
         )
         add_bullets(
@@ -178,7 +178,7 @@ def build() -> None:
         y = add_paragraph(
             ax,
             y,
-            "L'architettura e basata su ROS 2 Jazzy e separa simulazione, interfaccia utente e "
+            "L'architettura è basata su ROS 2 Jazzy e separa simulazione, interfaccia utente e "
             "analisi sperimentale. Il nodo mujoco_sim gestisce il modello MuJoCo e pubblica la "
             "telemetria; web_teleop integra server web, dashboard e input utente; replay_eval "
             "riproduce una sessione registrata e calcola l'errore di traiettoria.",
@@ -192,7 +192,7 @@ def build() -> None:
         )
         topic_rows = [
             ["Topic", "Ruolo"],
-            ["/cmd_vel", "Comando velocita lineare e angolare verso il simulatore"],
+            ["/cmd_vel", "Comando velocità lineare e angolare verso il simulatore"],
             ["/imu, /joint_states, /odom", "Telemetria inerziale, giunti e traiettoria"],
             ["/contacts/left, /contacts/right", "Stato di contatto dei piedi"],
             ["/fall_detected", "Segnalazione di caduta basata su roll/pitch"],
@@ -215,7 +215,7 @@ def build() -> None:
             ["Metrica", "Target", "Motivazione"],
             ["Frequenza telemetria", ">= 30 Hz", "Aggiornamento fluido dashboard"],
             ["Latenza comando", "< 50 ms", "Teleoperazione reattiva"],
-            ["MSE replay", "< 1e-4 m^2", "Riproducibilita traiettoria"],
+            ["MSE replay", "< 1e-4 m^2", "Riproducibilità traiettoria"],
             ["Fall/flight/contact", "eventi rilevati", "Validazione alert di sicurezza"],
         ]
         y = add_table(ax, y, metric_rows, [2.20, 1.45, 2.95], row_h=0.33)
@@ -223,7 +223,7 @@ def build() -> None:
             ax,
             y - 0.08,
             "latenza_comandi.png",
-            "Figura 2 - Media e p95 restano sotto il target di 50 ms; il massimo obstacle e annotato come picco isolato.",
+            "Figura 2 - Media e p95 restano sotto il target di 50 ms; il massimo obstacle è annotato come picco isolato.",
             height=3.85,
         )
         finish_page(pdf, fig, 3)
@@ -244,8 +244,8 @@ def build() -> None:
         y = add_paragraph(
             ax,
             y,
-            "Il replay deterministico e stato valutato sullo scenario flat, dove la traiettoria e "
-            "piu adatta a un confronto stabile. Lo scenario obstacle e invece orientato alla "
+            "Il replay deterministico è stato valutato sullo scenario flat, dove la traiettoria è "
+            "più adatta a un confronto stabile. Lo scenario obstacle è invece orientato alla "
             "validazione degli alert e degli stati critici; la frequenza media resta sopra target "
             "ma il minimo transitorio a 3 Hz viene considerato un rallentamento locale.",
         )
@@ -272,7 +272,7 @@ def build() -> None:
             ax,
             y,
             "Nel grafico seguente i segmenti temporali sono rappresentati in sequenza relativa, "
-            "poiche durante la prova obstacle sono presenti reset della simulazione e discontinuita "
+            "poiché durante la prova obstacle sono presenti reset della simulazione e discontinuità "
             "nel log. Questa scelta evita di sovrapporre campioni con lo stesso sim_time.",
         )
         y = add_image(
@@ -293,9 +293,9 @@ def build() -> None:
         y = add_paragraph(
             ax,
             y,
-            "Restano alcuni limiti: il progetto e interamente simulativo, la velocita comandata "
-            "non e calibrata automaticamente rispetto alla velocita effettiva, e l'odometria non "
-            "e stata confrontata in modo sistematico con il ground truth MuJoCo. Nello scenario "
+            "Restano alcuni limiti: il progetto è interamente simulativo, la velocità comandata "
+            "non è calibrata automaticamente rispetto alla velocità effettiva, e l'odometria non "
+            "è stata confrontata in modo sistematico con il ground truth MuJoCo. Nello scenario "
             "a ostacoli restano inoltre picchi occasionali di latenza e brevi cali di frequenza. "
             "Sviluppi futuri includono calibrazione automatica, analisi del drift laterale e "
             "adattamento a robot fisico.",
